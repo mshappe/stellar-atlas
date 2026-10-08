@@ -64,7 +64,12 @@ export function openLabelStore(databasePath: string, seeds: LabelSeed[], now = (
 }
 
 function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => string) {
-  const findLabel = database.prepare('SELECT gaia_source_id FROM labels WHERE gaia_source_id = ?')
+  const findLabel = database.prepare('SELECT origin FROM labels WHERE gaia_source_id = ?')
+  const findSeedEvent = database.prepare(`
+    SELECT id
+    FROM label_events
+    WHERE gaia_source_id = ? AND event_type = 'seeded'
+  `)
   const insertLabel = database.prepare(`
     INSERT INTO labels (gaia_source_id, display_label, evidence_json, origin, created_at, created_by)
     VALUES (?, ?, ?, 'seed', ?, NULL)
@@ -77,13 +82,20 @@ function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => strin
   database.exec('BEGIN IMMEDIATE')
   try {
     for (const seed of seeds) {
-      if (findLabel.get(seed.gaiaSourceId)) continue
       const timestamp = now()
-      insertLabel.run(seed.gaiaSourceId, seed.displayLabel, JSON.stringify(seed.evidence), timestamp)
-      insertEvent.run(seed.gaiaSourceId, timestamp, JSON.stringify({
+      const payload = JSON.stringify({
         display_label: seed.displayLabel,
         evidence: seed.evidence,
-      }))
+      })
+      const existingLabel = findLabel.get(seed.gaiaSourceId)
+      if (isRecord(existingLabel)) {
+        if (existingLabel.origin === 'seed' && !findSeedEvent.get(seed.gaiaSourceId)) {
+          insertEvent.run(seed.gaiaSourceId, timestamp, payload)
+        }
+        continue
+      }
+      insertLabel.run(seed.gaiaSourceId, seed.displayLabel, JSON.stringify(seed.evidence), timestamp)
+      insertEvent.run(seed.gaiaSourceId, timestamp, payload)
     }
     database.exec('COMMIT')
   } catch (error) {

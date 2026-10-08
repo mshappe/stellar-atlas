@@ -93,4 +93,31 @@ describe('label store', () => {
     expect(labelCount.count).toBe(0)
     verificationDatabase.close()
   })
+
+  it('repairs a legacy seeded label that is missing its audit event', () => {
+    const databasePath = temporaryDatabasePath()
+    const initialStore = openLabelStore(databasePath, [])
+    initialStore.close()
+    const database = new DatabaseSync(databasePath)
+    database.prepare(`
+      INSERT INTO labels (gaia_source_id, display_label, evidence_json, origin, created_at, created_by)
+      VALUES (?, ?, ?, 'seed', ?, NULL)
+    `).run(
+      provenance.labels[0].gaia_dr3_source_id,
+      provenance.labels[0].display_label,
+      JSON.stringify(provenance.labels[0]),
+      '2026-10-07T00:00:00.000Z',
+    )
+    database.close()
+
+    const store = openLabelStore(databasePath, parseLabelSeeds(provenance), () => '2026-10-08T00:00:00.000Z')
+
+    expect(store.listLabels()).toHaveLength(1)
+    expect(store.listEvents()).toMatchObject([{
+      gaiaSourceId: provenance.labels[0].gaia_dr3_source_id,
+      eventType: 'seeded',
+      occurredAt: '2026-10-08T00:00:00.000Z',
+    }])
+    store.close()
+  })
 })

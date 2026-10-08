@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS label_events (
 CREATE INDEX IF NOT EXISTS label_events_gaia_source_id_index
   ON label_events(gaia_source_id, id);
 
+CREATE UNIQUE INDEX IF NOT EXISTS label_events_one_seed_event
+  ON label_events(gaia_source_id)
+  WHERE event_type = 'seeded';
+
 CREATE TRIGGER IF NOT EXISTS label_events_no_update
 BEFORE UPDATE ON label_events
 BEGIN
