@@ -5,12 +5,14 @@ defineProps<{
   selectedCatalogKey: CatalogKey | undefined
   hideUnlabeledStars: boolean
   importStatus: string
+  labelCatalogStatus: string
 }>()
 
 const emit = defineEmits<{
   changeCatalog: [catalogKey: CatalogKey]
   toggleLabels: []
   importFile: [file: File]
+  retryLabels: []
 }>()
 
 function importCatalog(event: Event) {
@@ -75,5 +77,20 @@ function changeCatalog(event: Event) {
     >
       {{ importStatus }}
     </p>
+    <template v-if="labelCatalogStatus">
+      <p
+        class="status"
+        role="status"
+      >
+        {{ labelCatalogStatus }}
+      </p>
+      <button
+        class="measure-clear"
+        type="button"
+        @click="emit('retryLabels')"
+      >
+        Retry permanent labels
+      </button>
+    </template>
   </section>
 </template>

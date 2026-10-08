@@ -18,11 +18,11 @@ const scene = ref<InstanceType<typeof AtlasScene>>()
 const importStatus = ref('Loading focused stars…')
 const catalogState = ref('Loading focused stars…')
 const searchStatus = ref('Searches Gaia DR3 IDs, NASA host and planet identifiers, and configured labels.')
+const labelCatalogStatus = ref('')
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 let catalogLoadId = 0
-const labelCatalogReady = loadLabelCatalog(import.meta.env.BASE_URL).then(atlas.setLabelCatalog)
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
 const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
@@ -30,6 +30,7 @@ const route = computed(() => routeDisplay(atlas.state.measurementEndpoints))
 const labelIds = computed(() => atlas.displayedLabelIds())
 
 onMounted(() => {
+  void refreshLabelCatalog()
   void loadBundledCatalog('confirmed-hosts')
 })
 
@@ -39,7 +40,6 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   selectedBundledCatalogKey.value = catalogKey
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
-    await labelCatalogReady
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const parsed = parseGaiaCsv(await response.text())
@@ -57,7 +57,6 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
 async function importCatalog(file: File) {
   const loadId = ++catalogLoadId
   try {
-    await labelCatalogReady
     const catalog = parseGaiaCsv(await file.text())
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(catalog, false)
@@ -67,6 +66,16 @@ async function importCatalog(file: File) {
   } catch (error) {
     if (loadId !== catalogLoadId) return
     importStatus.value = error instanceof Error ? error.message : 'The catalog could not be read.'
+  }
+}
+
+async function refreshLabelCatalog() {
+  labelCatalogStatus.value = ''
+  try {
+    atlas.setLabelCatalog(await loadLabelCatalog(import.meta.env.BASE_URL))
+    if (atlas.state.activeCatalog) updateCatalogStatus()
+  } catch (error) {
+    labelCatalogStatus.value = `Permanent labels are unavailable: ${error instanceof Error ? error.message : 'unknown error'}. Retry to restore them.`
   }
 }
 
@@ -285,9 +294,11 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :selected-catalog-key="selectedBundledCatalogKey"
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
           :import-status="importStatus"
+          :label-catalog-status="labelCatalogStatus"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
+          @retry-labels="refreshLabelCatalog"
         />
         <CatalogSearch
           :key="searchResetId"

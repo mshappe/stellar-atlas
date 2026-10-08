@@ -10,6 +10,7 @@ describe('CatalogControls', () => {
         selectedCatalogKey: undefined,
         hideUnlabeledStars: false,
         importStatus: 'Ready.',
+        labelCatalogStatus: '',
       },
     })
 
