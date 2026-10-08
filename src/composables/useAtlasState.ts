@@ -118,11 +118,18 @@ export function useAtlasState() {
   }
 
   function registerKnownCatalogIdentifiers(rows: GaiaRow[]) {
+    const knownIdentifiers = { ...state.knownCatalogIdentifiers }
     rows.forEach((row) => {
       const identifiers = [row.hostNames, row.planetNames]
         .filter((identifier): identifier is string => Boolean(identifier))
-      if (identifiers.length) state.knownCatalogIdentifiers[row.sourceId] = identifiers
+      if (identifiers.length) {
+        knownIdentifiers[row.sourceId] = [...new Set([
+          ...(knownIdentifiers[row.sourceId] ?? []),
+          ...identifiers,
+        ])]
+      }
     })
+    state.knownCatalogIdentifiers = knownIdentifiers
   }
 
   return {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { nextTick, watch } from 'vue'
 import { useAtlasState } from '../src/composables/useAtlasState'
 import type { GaiaRow, ParsedCatalog } from '../src/atlas-types'
 import { parseLabelCatalog } from '../src/label-catalog'
@@ -97,5 +98,21 @@ describe('useAtlasState', () => {
 
     expect(atlas.state.measurementEndpoints).toEqual([])
     expect(atlas.state.selectedObject).toBe(wolf)
+  })
+
+  it('replaces retained aliases so shallow state consumers update', async () => {
+    const atlas = useAtlasState()
+    let updates = 0
+    watch(() => atlas.state.knownCatalogIdentifiers, () => {
+      updates += 1
+    })
+
+    atlas.activateCatalog(catalog, true)
+    await nextTick()
+
+    expect(atlas.state.knownCatalogIdentifiers).toEqual({
+      wolf: ['Wolf 1069'],
+    })
+    expect(updates).toBe(1)
   })
 })
