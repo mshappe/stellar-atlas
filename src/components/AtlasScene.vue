@@ -150,6 +150,7 @@ function createSolLabel() {
     event.preventDefault()
     event.stopPropagation()
     emit('select', SOL)
+    focusOnObject(SOL)
     emit('focus', SOL)
   })
   anchor.append(element)
@@ -273,6 +274,7 @@ function renderStarLabels() {
       event.preventDefault()
       event.stopPropagation()
       emit('select', row)
+      focusOnObject(row)
       emit('focus', row)
     })
     anchor.append(element)
@@ -311,9 +313,12 @@ function pickObject(event: MouseEvent): AtlasObject | undefined {
   pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1
   pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1
   raycaster.setFromCamera(pointer, camera)
-  const intersection = stars ? raycaster.intersectObject(stars)[0] : undefined
-  const row = intersection?.index === undefined ? undefined : catalogRows.value[intersection.index]
-  if (row && (!props.hideUnlabeledStars || props.labelIds.has(row.sourceId))) return row
+  const row = stars
+    ? raycaster.intersectObject(stars)
+      .map((intersection) => intersection.index === undefined ? undefined : catalogRows.value[intersection.index])
+      .find((candidate) => candidate && (!props.hideUnlabeledStars || props.labelIds.has(candidate.sourceId)))
+    : undefined
+  if (row) return row
   return solMarker && raycaster.intersectObject(solMarker)[0] ? SOL : undefined
 }
 

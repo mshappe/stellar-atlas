@@ -55,14 +55,17 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
 }
 
 async function importCatalog(file: File) {
-  catalogLoadId += 1
+  const loadId = ++catalogLoadId
   try {
     await labelCatalogReady
-    atlas.activateCatalog(parseGaiaCsv(await file.text()), false)
+    const catalog = parseGaiaCsv(await file.text())
+    if (loadId !== catalogLoadId) return
+    atlas.activateCatalog(catalog, false)
     selectedBundledCatalogKey.value = undefined
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
+    if (loadId !== catalogLoadId) return
     importStatus.value = error instanceof Error ? error.message : 'The catalog could not be read.'
   }
 }
