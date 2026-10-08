@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import { MAX_DISTANCE_PARSECS, PROMINENT_STAR_LABELS, SOL } from '../atlas-data'
+import { MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
 import { cartesianPosition, relativeCartesianPosition } from '../catalog'
 
@@ -13,6 +13,7 @@ const props = defineProps<{
   hideUnlabeledStars: boolean
   labelIds: ReadonlySet<string>
   alternativeLabelIds: ReadonlySet<string>
+  permanentLabels: Readonly<Record<string, string>>
   routeEndpoints: AtlasObject[]
   displayName: (object: AtlasObject) => string
 }>()
@@ -83,6 +84,7 @@ watch(() => props.labelIds, () => {
   setPointVisibility()
 })
 watch(() => props.alternativeLabelIds, renderStarLabels)
+watch(() => props.permanentLabels, renderStarLabels)
 watch(() => props.hideUnlabeledStars, setPointVisibility)
 
 function initializeScene(container: HTMLDivElement) {
@@ -257,7 +259,7 @@ function renderStarLabels() {
   if (!starLabels) return
   starLabels.clear()
   for (const row of catalogRows.value) {
-    const officialName = PROMINENT_STAR_LABELS[row.sourceId]
+    const officialName = props.permanentLabels[row.sourceId]
     const alternative = props.alternativeLabelIds.has(row.sourceId)
     const name = officialName ?? (alternative ? props.displayName(row) : undefined)
     if (!name) continue

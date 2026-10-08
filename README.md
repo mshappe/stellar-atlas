@@ -15,6 +15,8 @@ The browser UI is a Vue 3 application. `src/App.vue` owns catalog loading, CSV v
 
 `src/components/AtlasScene.vue` is the imperative Three.js boundary. It receives the raw active catalog, origin, label IDs, and route endpoints as props; it emits selection, focus, and route-pop intents. It owns WebGL/CSS2D renderer lifecycle, point geometry, labels, picking, the SVG route overlay, resizing, and resource disposal. Sidebar components render the declarative catalog controls, search, selection, route, and reference-frame panels. The astronomy calculations, radius filtering, catalog search, label behavior, and route arithmetic remain in the test-covered `src/catalog.ts` utility module.
 
+Permanent labels are loaded and validated from the evidence records in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json), not embedded in application source. They are curated-only: the browser does not create, persist, or represent new permanent labels as evidence-backed data. Search-result labels remain temporary and visually distinct.
+
 Run the project checks with:
 
 ```sh

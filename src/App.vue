@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, PROMINENT_STAR_LABELS, SOL } from './atlas-data'
+import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, SOL } from './atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
@@ -10,6 +10,7 @@ import RoutePanel from './components/RoutePanel.vue'
 import SelectionPanel from './components/SelectionPanel.vue'
 import { useAtlasState } from './composables/useAtlasState'
 import { cartesianDistance, cartesianPosition, formatDisplayName, routeDistanceFromPositions } from './catalog'
+import { loadLabelCatalog } from './label-catalog'
 
 const REQUIRED_COLUMNS = ['source_id', 'ra', 'dec', 'parallax'] as const
 const atlas = useAtlasState()
@@ -20,6 +21,7 @@ const searchStatus = ref('Searches Gaia DR3 IDs, NASA host and planet identifier
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 let catalogLoadId = 0
+const labelCatalogReady = loadLabelCatalog(import.meta.env.BASE_URL).then(atlas.setLabelCatalog)
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
 const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
@@ -35,6 +37,7 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const loadId = ++catalogLoadId
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
+    await labelCatalogReady
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const parsed = parseGaiaCsv(await response.text())
@@ -55,6 +58,7 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
 async function importCatalog(file: File) {
   catalogLoadId += 1
   try {
+    await labelCatalogReady
     atlas.activateCatalog(parseGaiaCsv(await file.text()), false)
     resetSearch()
     updateCatalogStatus()
@@ -139,7 +143,7 @@ function clearRoute() {
 
 function sourceDisplayName(object: AtlasObject) {
   if (isNonGaiaStar(object)) return object.name
-  return PROMINENT_STAR_LABELS[object.sourceId]
+  return atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
     ?? formatHostNames(object.hostNames ?? atlas.state.knownCatalogIdentifiers[object.sourceId]?.[0])
     ?? `Gaia DR3 ${object.sourceId}`
 }
@@ -150,7 +154,7 @@ function searchableIdentifiers(object: AtlasObject) {
     `Gaia DR3 ${object.sourceId}`,
     object.hostNames,
     object.planetNames,
-    PROMINENT_STAR_LABELS[object.sourceId],
+    atlas.state.permanentLabels.labelsBySourceId[object.sourceId],
     ...(atlas.state.knownCatalogIdentifiers[object.sourceId] ?? []),
   ].filter(Boolean))].join(' · ')
 }
@@ -168,7 +172,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     ]
   }
   const distanceParsecs = 1000 / object.parallax
-  const preferredName = PROMINENT_STAR_LABELS[object.sourceId]
+  const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
   const fields: Array<[string, string]> = [
     ['Gaia source ID', object.sourceId],
     ['RA (deg)', object.ra.toFixed(8)],
@@ -379,6 +383,7 @@ function readCsv(text: string) {
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
           :label-ids="labelIds"
           :alternative-label-ids="atlas.state.alternativeLabelIds"
+          :permanent-labels="atlas.state.permanentLabels.labelsBySourceId"
           :route-endpoints="atlas.state.measurementEndpoints"
           :display-name="sourceDisplayName"
           @select="selectMapObject"

@@ -1,12 +1,11 @@
 import { shallowReactive } from 'vue'
 import {
   INITIAL_ORIGIN_SOURCE_ID,
-  LABELED_SOURCE_IDS,
   MAX_DISTANCE_PARSECS,
-  PROMINENT_STAR_LABELS,
   SOL,
 } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
+import { EMPTY_LABEL_CATALOG, type LabelCatalog } from '../label-catalog'
 import {
   appendSelectionEndpoint,
   cartesianPosition,
@@ -26,6 +25,7 @@ export type AtlasState = {
   matchedSearchSourceIds: Set<string>
   alternativeLabelIds: Set<string>
   knownCatalogIdentifiers: Record<string, string[]>
+  permanentLabels: LabelCatalog
 }
 
 export function useAtlasState() {
@@ -39,6 +39,7 @@ export function useAtlasState() {
     matchedSearchSourceIds: new Set(),
     alternativeLabelIds: new Set(),
     knownCatalogIdentifiers: {},
+    permanentLabels: EMPTY_LABEL_CATALOG,
   })
 
   function activateCatalog(catalog: ParsedCatalog, focusedCatalog: boolean) {
@@ -61,11 +62,11 @@ export function useAtlasState() {
   function runSearch(query: string) {
     const normalizedQuery = query.trim().toLowerCase()
     const rows = state.activeCatalog
-      ? searchCatalogRows(state.activeCatalog.rows, query, PROMINENT_STAR_LABELS, state.knownCatalogIdentifiers)
+      ? searchCatalogRows(state.activeCatalog.rows, query, state.permanentLabels.labelsBySourceId, state.knownCatalogIdentifiers)
       : []
     state.matchedSearchSourceIds = new Set(rows.map((row) => row.sourceId))
     state.alternativeLabelIds = new Set([...state.matchedSearchSourceIds]
-      .filter((sourceId) => !LABELED_SOURCE_IDS.has(sourceId)))
+      .filter((sourceId) => !state.permanentLabels.sourceIds.has(sourceId)))
     return [
       ...(SOL.name.toLowerCase().includes(normalizedQuery) || SOL.sourceId.includes(normalizedQuery) ? [SOL] : []),
       ...rows,
@@ -99,13 +100,17 @@ export function useAtlasState() {
   }
 
   function displayedLabelIds() {
-    return new Set([...LABELED_SOURCE_IDS, ...state.alternativeLabelIds])
+    return new Set([...state.permanentLabels.sourceIds, ...state.alternativeLabelIds])
+  }
+
+  function setLabelCatalog(labelCatalog: LabelCatalog) {
+    state.permanentLabels = labelCatalog
   }
 
   function collapseSearchMatchLabels(object: AtlasObject) {
     if (isNonGaiaStar(object) || !state.matchedSearchSourceIds.has(object.sourceId)) return
     state.matchedSearchSourceIds = new Set([object.sourceId])
-    state.alternativeLabelIds = selectedAlternativeLabelIds(object.sourceId, LABELED_SOURCE_IDS)
+    state.alternativeLabelIds = selectedAlternativeLabelIds(object.sourceId, state.permanentLabels.sourceIds)
   }
 
   function registerKnownCatalogIdentifiers(rows: GaiaRow[]) {
@@ -127,6 +132,7 @@ export function useAtlasState() {
     popRouteEndpoint,
     clearRoute,
     displayedLabelIds,
+    setLabelCatalog,
   }
 }
 
