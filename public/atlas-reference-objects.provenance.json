@@ -1,0 +1,35 @@
+{
+  "frame": "ICRS barycentric",
+  "epoch": "J2016.0 (JD 2457389.0 TDB)",
+  "objects": [
+    {
+      "id": "sol",
+      "name": "Sol",
+      "object_category": "Star",
+      "source": "JPL Horizons",
+      "horizons_target": "10 (Sun)",
+      "center": "500@0 (Solar System barycenter)",
+      "reference_system": "ICRF",
+      "position_au": [
+        0.00373759684930453,
+        0.001405550559281159,
+        -0.0001611777598550658
+      ],
+      "position_pc": [
+        1.812038087014733e-8,
+        6.814301406306658e-9,
+        -7.81411830683232e-10
+      ],
+      "query": {
+        "EPHEM_TYPE": "VECTORS",
+        "START_TIME": "2016-01-01 12:00",
+        "STOP_TIME": "2016-01-02 12:00",
+        "STEP_SIZE": "1 d",
+        "OUT_UNITS": "AU-D",
+        "VEC_TABLE": "2",
+        "CSV_FORMAT": "YES"
+      },
+      "conversion": "parsecs = astronomical_units / 206264.80624709636"
+    }
+  ]
+}

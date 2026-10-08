@@ -1,0 +1,69 @@
+{
+  "purpose": "Gaia DR3 astrometric positions for confirmed exoplanet host stars and explicitly documented named reference stars in an exact 300-light-year geometric volume around TRAPPIST-1.",
+  "output_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv",
+  "output_row_count": 1000,
+  "gaia": {
+    "catalog": "Gaia DR3",
+    "table": "gaiadr3.gaia_source",
+    "endpoint": "https://gea.esac.esa.int/tap-server/tap/sync",
+    "retrieved_at": "2026-10-08T17:24:19-05:00",
+    "broad_containment_adql": "SELECT source_id,ra,dec,parallax,parallax_error,phot_g_mean_mag,bp_rp FROM gaiadr3.gaia_source WHERE parallax >= 9.574203430085845",
+    "broad_source_row_count": 666109,
+    "final_source_row_count": 443660,
+    "coordinate_frame": "ICRS",
+    "astrometry_reference_epoch": "J2016.0"
+  },
+  "volume": {
+    "center": {
+      "gaia_dr3_source_id": "2635476908753563008",
+      "name": "TRAPPIST-1",
+      "icrs_cartesian_parsecs": [
+        12.08188821006726,
+        -2.872402434133071,
+        -1.095998012840599
+      ]
+    },
+    "radius_light_years": 300,
+    "radius_parsecs": 91.98041813566518,
+    "selection_rule": "Exact Euclidean separation in reciprocal-parallax ICRS Cartesian coordinates at J2016.0 is less than or equal to radius_parsecs.",
+    "generator": "scripts/build_trappist_centered_catalogs.py"
+  },
+  "nasa_exoplanet_archive": {
+    "table": "PSCompPars",
+    "endpoint": "https://exoplanetarchive.ipac.caltech.edu/TAP/sync",
+    "retrieved_at": "2026-10-08T17:24:19-05:00",
+    "adql": "SELECT hostname,gaia_dr3_id,pl_name,discoverymethod,disc_year,sy_dist,pl_orbsmax,pl_orbeccen FROM pscomppars WHERE gaia_dr3_id IS NOT NULL AND sy_dist <= 104.44733155111514",
+    "broad_containment_rule": "sy_dist is limited to the preliminary Solar-System-barycentric containment radius only; final membership is determined by the Gaia Cartesian TRAPPIST-1 separation.",
+    "source_planet_record_count": 1625,
+    "distinct_gaia_dr3_host_count": 1099
+  },
+  "join": {
+    "method": "Exact match between Gaia DR3 source_id and NASA gaia_dr3_id after removal of the literal prefix 'Gaia DR3 '.",
+    "matched_host_count": 999,
+    "nasa_host_ids_in_broad_gaia_containment_set": 1098,
+    "nasa_host_ids_excluded_by_final_trappist_1_volume_or_absent_from_broad_gaia_set": 100
+  },
+  "output_composition": {
+    "confirmed_exoplanet_hosts": 999,
+    "named_reference_stars": 1,
+    "named_reference_source_ids": [
+      "4429785739602747392"
+    ],
+    "named_reference_provenance_file": "prominent-star-labels.provenance.json"
+  },
+  "known_planetary_system_diameter": {
+    "definition": "Twice the largest known planetary apoastron: 2 × max[a × (1 + e)].",
+    "inclusion_rule": "At least one confirmed planet must have finite pl_orbsmax > 0 and 0 <= pl_orbeccen < 1.",
+    "systems_with_reported_diameter": 815,
+    "light_second_conversion": {
+      "seconds_per_au": 499.0047838361564,
+      "definition": "IAU-defined astronomical unit divided by the SI-defined speed of light."
+    }
+  },
+  "limitations": [
+    "PSCompPars is used only for confirmed exoplanet records; candidates are not included.",
+    "The reported diameter is the known planetary-orbit extent only. It excludes stellar companions, debris disks, and planets without the required reported elements.",
+    "This is a reciprocal-parallax display selection, not a probabilistic distance-selected census.",
+    "No debris-belt-only systems are included without a separately citable detection catalog and unambiguous Gaia DR3 match."
+  ]
+}

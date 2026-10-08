@@ -1,0 +1,104 @@
+{
+  "purpose": "Evidence-backed labels shown for selected nearby stars in the Stellar Atlas viewer.",
+  "selection_rule": "A label is rendered only for the listed exact Gaia DR3 source_id values. Source IDs must be present in the bundled 300-light-year Gaia DR3 volume; most are present in the NASA Exoplanet Archive confirmed-host join, while explicitly documented general-volume labels use a published catalog crossmatch.",
+  "source": {
+    "catalog": "NASA Exoplanet Archive PSCompPars",
+    "provenance_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.provenance.json",
+    "field": "hostname"
+  },
+  "general_volume_crossmatch_source": {
+    "catalog": "Gaia DR3",
+    "table": "gaiadr3.dr2_neighbourhood",
+    "endpoint": "https://gea.esac.esa.int/tap-server/tap/sync"
+  },
+  "labels": [
+    {
+      "gaia_dr3_source_id": "2452378776434477184",
+      "nasa_hostname": "tau Cet",
+      "display_label": "Tau Ceti"
+    },
+    {
+      "gaia_dr3_source_id": "5853498713190525696",
+      "nasa_hostname": "Proxima Cen",
+      "display_label": "Proxima Centauri"
+    },
+    {
+      "gaia_dr3_source_id": "5164707970261890560",
+      "nasa_hostname": "eps Eri",
+      "display_label": "Epsilon Eridani"
+    },
+    {
+      "gaia_dr3_source_id": "4472832130942575872",
+      "nasa_hostname": "Barnard's star",
+      "display_label": "Barnard's Star"
+    },
+    {
+      "gaia_dr3_source_id": "2635476908753563008",
+      "nasa_hostname": "TRAPPIST-1",
+      "display_label": "TRAPPIST-1"
+    },
+    {
+      "gaia_dr3_source_id": "704967037090946688",
+      "nasa_hostname": "55 Cnc",
+      "display_label": "55 Cancri"
+    },
+    {
+      "gaia_dr3_source_id": "2835207319109249920",
+      "nasa_hostname": "51 Peg",
+      "display_label": "51 Pegasi"
+    },
+    {
+      "gaia_dr3_source_id": "6322070093095493504",
+      "nasa_hostname": "GJ 581",
+      "display_label": "Gliese 581",
+      "alias_resolution": {
+        "service": "NASA Exoplanet Archive System Aliases Lookup Service",
+        "requested_name": "Gliese 581",
+        "resolved_name": "GJ 581",
+        "retrieved_at": "2026-10-08T14:42:57-05:00"
+      }
+    },
+    {
+      "gaia_dr3_source_id": "1208695640675619584",
+      "nasa_hostname": "Ross 508",
+      "display_label": "Ross 508"
+    },
+    {
+      "gaia_dr3_source_id": "2371032916186181760",
+      "nasa_hostname": "LHS 1140",
+      "display_label": "LHS 1140"
+    },
+    {
+      "gaia_dr3_source_id": "4810594479418041856",
+      "nasa_hostname": "Kapteyn",
+      "display_label": "Kapteyn's Star",
+      "alias_resolution": {
+        "service": "NASA Exoplanet Archive System Aliases Lookup Service",
+        "requested_name": "Kapteyn's Star",
+        "resolved_name": "Kapteyn",
+        "retrieved_at": "2026-10-08T15:25:55-05:00"
+      }
+    },
+    {
+      "gaia_dr3_source_id": "4429785739602747392",
+      "display_label": "Unukalhai (Serpent's Head)",
+      "formal_name": "Unukalhai",
+      "bayer_designation": "Alpha Serpentis",
+      "requested_descriptive_label": "Serpent's Head",
+      "alias_resolution": {
+        "service": "NASA Exoplanet Archive System Aliases Lookup Service",
+        "requested_name": "Unukalhai",
+        "resolved_name": "HIP 77070",
+        "retrieved_at": "2026-10-08T15:26:15-05:00",
+        "gaia_dr2_source_id": "4429785739601541504"
+      },
+      "gaia_dr2_to_dr3_crossmatch": {
+        "table": "gaiadr3.dr2_neighbourhood",
+        "dr3_source_id": "4429785739602747392",
+        "angular_distance_milliarcseconds": 5.325445,
+        "magnitude_difference": 0.20050478,
+        "proper_motion_propagation": true
+      }
+    }
+  ]
+}
