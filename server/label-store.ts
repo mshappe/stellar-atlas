@@ -35,9 +35,14 @@ export function parseLabelSeeds(provenance: unknown): LabelSeed[] {
 export function openLabelStore(databasePath: string, seeds: LabelSeed[], now = () => new Date().toISOString()): LabelStore {
   if (databasePath !== ':memory:') mkdirSync(dirname(databasePath), { recursive: true })
   const database = new DatabaseSync(databasePath)
-  database.exec(readFileSync(schemaPath, 'utf8'))
-  database.prepare('INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(SCHEMA_VERSION, now())
-  seedLabels(database, seeds, now)
+  try {
+    database.exec(readFileSync(schemaPath, 'utf8'))
+    database.prepare('INSERT OR IGNORE INTO schema_migrations (version, applied_at) VALUES (?, ?)').run(SCHEMA_VERSION, now())
+    seedLabels(database, seeds, now)
+  } catch (error) {
+    database.close()
+    throw error
+  }
 
   return {
     listLabels: () => database.prepare(`
@@ -69,14 +74,21 @@ function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => strin
     VALUES (?, 'seeded', NULL, ?, ?)
   `)
 
-  for (const seed of seeds) {
-    if (findLabel.get(seed.gaiaSourceId)) continue
-    const timestamp = now()
-    insertLabel.run(seed.gaiaSourceId, seed.displayLabel, JSON.stringify(seed.evidence), timestamp)
-    insertEvent.run(seed.gaiaSourceId, timestamp, JSON.stringify({
-      display_label: seed.displayLabel,
-      evidence: seed.evidence,
-    }))
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    for (const seed of seeds) {
+      if (findLabel.get(seed.gaiaSourceId)) continue
+      const timestamp = now()
+      insertLabel.run(seed.gaiaSourceId, seed.displayLabel, JSON.stringify(seed.evidence), timestamp)
+      insertEvent.run(seed.gaiaSourceId, timestamp, JSON.stringify({
+        display_label: seed.displayLabel,
+        evidence: seed.evidence,
+      }))
+    }
+    database.exec('COMMIT')
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
   }
 }
 

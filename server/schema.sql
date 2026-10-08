@@ -26,3 +26,15 @@ CREATE TABLE IF NOT EXISTS label_events (
 
 CREATE INDEX IF NOT EXISTS label_events_gaia_source_id_index
   ON label_events(gaia_source_id, id);
+
+CREATE TRIGGER IF NOT EXISTS label_events_no_update
+BEFORE UPDATE ON label_events
+BEGIN
+  SELECT RAISE(ABORT, 'label events are append-only');
+END;
+
+CREATE TRIGGER IF NOT EXISTS label_events_no_delete
+BEFORE DELETE ON label_events
+BEGIN
+  SELECT RAISE(ABORT, 'label events are append-only');
+END;

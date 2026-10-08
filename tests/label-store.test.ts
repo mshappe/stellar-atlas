@@ -1,3 +1,4 @@
+import { DatabaseSync } from 'node:sqlite'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -57,5 +58,39 @@ describe('label store', () => {
     expect(second.listEvents()).toHaveLength(1)
     expect(second.listLabels()[0]?.createdAt).toBe('2026-10-08T00:00:00.000Z')
     second.close()
+  })
+
+  it('rejects rewriting audit events at the database level', () => {
+    const databasePath = temporaryDatabasePath()
+    const store = openLabelStore(databasePath, parseLabelSeeds(provenance))
+    store.close()
+    const database = new DatabaseSync(databasePath)
+
+    expect(() => database.exec('UPDATE label_events SET event_type = \'created\'')).toThrow('label events are append-only')
+    expect(() => database.exec('DELETE FROM label_events')).toThrow('label events are append-only')
+
+    database.close()
+  })
+
+  it('rolls back labels when their audit event cannot be recorded', () => {
+    const databasePath = temporaryDatabasePath()
+    const initialStore = openLabelStore(databasePath, [])
+    initialStore.close()
+    const database = new DatabaseSync(databasePath)
+    database.exec(`
+      CREATE TRIGGER reject_seed_events
+      BEFORE INSERT ON label_events
+      BEGIN
+        SELECT RAISE(ABORT, 'seed events unavailable');
+      END;
+    `)
+    database.close()
+
+    expect(() => openLabelStore(databasePath, parseLabelSeeds(provenance))).toThrow('seed events unavailable')
+
+    const verificationDatabase = new DatabaseSync(databasePath)
+    const labelCount = verificationDatabase.prepare('SELECT COUNT(*) AS count FROM labels').get() as { count: number }
+    expect(labelCount.count).toBe(0)
+    verificationDatabase.close()
   })
 })
