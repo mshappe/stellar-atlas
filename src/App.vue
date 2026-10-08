@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, SOL } from './atlas-data'
-import type { AtlasObject, GaiaRow, ParsedCatalog } from './atlas-types'
+import type { AtlasObject, CatalogKey, GaiaRow, ParsedCatalog } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
 import CatalogSearch from './components/CatalogSearch.vue'
@@ -20,6 +20,7 @@ const catalogState = ref('Loading focused stars…')
 const searchStatus = ref('Searches Gaia DR3 IDs, NASA host and planet identifiers, and configured labels.')
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
+const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 let catalogLoadId = 0
 const labelCatalogReady = loadLabelCatalog(import.meta.env.BASE_URL).then(atlas.setLabelCatalog)
 
@@ -35,6 +36,7 @@ onMounted(() => {
 async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const definition = BUNDLED_CATALOGS[catalogKey]
   const loadId = ++catalogLoadId
+  selectedBundledCatalogKey.value = catalogKey
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
     await labelCatalogReady
@@ -42,10 +44,7 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
     if (!response.ok) throw new Error(`HTTP ${response.status}`)
     const parsed = parseGaiaCsv(await response.text())
     if (loadId !== catalogLoadId) return
-    atlas.activateCatalog(parsed, definition.focusedCatalog)
-    if (atlas.state.activeCatalog?.rows.length !== definition.count) {
-      throw new Error(`Expected ${definition.count.toLocaleString()} catalog rows but received ${atlas.state.activeCatalog?.rows.length.toLocaleString() ?? '0'}.`)
-    }
+    atlas.activateCatalog(parsed, definition.focusedCatalog, definition.count)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
@@ -60,6 +59,7 @@ async function importCatalog(file: File) {
   try {
     await labelCatalogReady
     atlas.activateCatalog(parseGaiaCsv(await file.text()), false)
+    selectedBundledCatalogKey.value = undefined
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
@@ -122,15 +122,18 @@ function resetSearch() {
 
 function locateSearchResult(object: AtlasObject) {
   atlas.locateObject(object)
+  updateCatalogStatus()
   scene.value?.focusObject(object)
 }
 
 function selectMapObject(object: AtlasObject) {
   atlas.selectMapObject(object)
+  updateCatalogStatus()
 }
 
 function focusMapObject(object: AtlasObject) {
   atlas.locateObject(object)
+  updateCatalogStatus()
 }
 
 function popRoute() {
@@ -358,10 +361,10 @@ function readCsv(text: string) {
           @clear="clearRoute"
         />
         <CatalogControls
-          :focused-catalog="atlas.state.activeFocusedCatalog"
+          :selected-catalog-key="selectedBundledCatalogKey"
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
           :import-status="importStatus"
-          @change-catalog="(focused) => loadBundledCatalog(focused ? 'confirmed-hosts' : 'all-stars')"
+          @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
         />

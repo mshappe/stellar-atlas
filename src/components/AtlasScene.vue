@@ -46,6 +46,7 @@ let routeMarkers: SVGGElement | undefined
 let resizeObserver: ResizeObserver | undefined
 let animationFrame: number | undefined
 let stars: THREE.Points | undefined
+let axes: THREE.AxesHelper | undefined
 let solMarker: THREE.Points | undefined
 let solLabel: CSS2DObject | undefined
 let starLabels: THREE.Group | undefined
@@ -74,17 +75,11 @@ onBeforeUnmount(() => {
   routeOverlay?.remove()
 })
 
-watch(() => props.catalog, renderCatalog)
-watch(() => props.selectedOrigin, () => {
-  renderCatalog()
-  updateSolRenderPosition()
-})
+watch([() => props.catalog, () => props.selectedOrigin], renderCatalog)
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()
 })
-watch(() => props.alternativeLabelIds, renderStarLabels)
-watch(() => props.permanentLabels, renderStarLabels)
 watch(() => props.hideUnlabeledStars, setPointVisibility)
 
 function initializeScene(container: HTMLDivElement) {
@@ -116,7 +111,8 @@ function initializeScene(container: HTMLDivElement) {
   controls.minDistance = 0.01
   controls.maxDistance = 1e12
 
-  scene.add(new THREE.AxesHelper(1))
+  axes = new THREE.AxesHelper(1)
+  scene.add(axes)
   scene.add(new THREE.Mesh(
     new THREE.SphereGeometry(MAX_DISTANCE_PARSECS, 48, 32),
     new THREE.MeshBasicMaterial({ color: '#3f99c3', wireframe: true, transparent: true, opacity: 0.18 }),
@@ -244,6 +240,7 @@ function renderCatalog() {
   camera.updateProjectionMatrix()
   controls.target.set(0, 0, 0)
   controls.update()
+  axes?.scale.setScalar(Math.max(MAX_DISTANCE_PARSECS * 0.1, farthest * 0.1, 1))
 }
 
 function clearRenderedCatalog() {

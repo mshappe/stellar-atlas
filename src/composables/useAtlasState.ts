@@ -42,15 +42,20 @@ export function useAtlasState() {
     permanentLabels: EMPTY_LABEL_CATALOG,
   })
 
-  function activateCatalog(catalog: ParsedCatalog, focusedCatalog: boolean) {
-    registerKnownCatalogIdentifiers(catalog.rows)
+  function activateCatalog(catalog: ParsedCatalog, focusedCatalog: boolean, expectedRowCount?: number) {
     const origin = catalog.rows.find((row) => row.sourceId === INITIAL_ORIGIN_SOURCE_ID)
     if (!origin) {
       throw new Error('The active catalog must contain TRAPPIST-1 (Gaia DR3 2635476908753563008), the fixed map origin.')
     }
 
+    const filteredCatalog = filterCatalogToSelectedOrigin(catalog, origin)
+    if (expectedRowCount !== undefined && filteredCatalog.rows.length !== expectedRowCount) {
+      throw new Error(`Expected ${expectedRowCount.toLocaleString()} catalog rows but received ${filteredCatalog.rows.length.toLocaleString()}.`)
+    }
+
+    registerKnownCatalogIdentifiers(catalog.rows)
     state.selectedOrigin = origin
-    state.activeCatalog = filterCatalogToSelectedOrigin(catalog, origin)
+    state.activeCatalog = filteredCatalog
     state.activeFocusedCatalog = focusedCatalog
     clearSearch()
   }
@@ -96,7 +101,6 @@ export function useAtlasState() {
 
   function clearRoute() {
     state.measurementEndpoints = []
-    state.selectedObject = undefined
   }
 
   function displayedLabelIds() {

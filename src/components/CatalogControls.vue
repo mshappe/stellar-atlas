@@ -1,12 +1,14 @@
 <script setup lang="ts">
+import type { CatalogKey } from '../atlas-types'
+
 defineProps<{
-  focusedCatalog: boolean
+  selectedCatalogKey: CatalogKey | undefined
   hideUnlabeledStars: boolean
   importStatus: string
 }>()
 
 const emit = defineEmits<{
-  changeCatalog: [focused: boolean]
+  changeCatalog: [catalogKey: CatalogKey]
   toggleLabels: []
   importFile: [file: File]
 }>()
@@ -19,7 +21,8 @@ function importCatalog(event: Event) {
 }
 
 function changeCatalog(event: Event) {
-  emit('changeCatalog', (event.target as HTMLSelectElement).value === 'confirmed-hosts')
+  const value = (event.target as HTMLSelectElement).value
+  if (value === 'confirmed-hosts' || value === 'all-stars') emit('changeCatalog', value)
 }
 </script>
 
@@ -34,9 +37,15 @@ function changeCatalog(event: Event) {
       <span>Bundled map</span>
       <select
         id="catalog-mode"
-        :value="focusedCatalog ? 'confirmed-hosts' : 'all-stars'"
+        :value="selectedCatalogKey ?? ''"
         @change="changeCatalog"
       >
+        <option
+          value=""
+          disabled
+        >
+          Imported Gaia DR3 CSV
+        </option>
         <option value="confirmed-hosts">Focused stars (1,000)</option>
         <option value="all-stars">All Gaia DR3 sources (443,660)</option>
       </select>

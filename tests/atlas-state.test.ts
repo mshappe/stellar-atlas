@@ -49,6 +49,16 @@ describe('useAtlasState', () => {
     expect(atlas.state.activeFocusedCatalog).toBe(true)
   })
 
+  it('rejects a mismatched bundled row count before changing active state', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+
+    expect(() => atlas.activateCatalog(catalog, true, 3)).toThrow('Expected 3 catalog rows but received 2.')
+    expect(atlas.state.activeCatalog).toBeUndefined()
+    expect(atlas.state.selectedOrigin.sourceId).toBe('sol')
+    expect(atlas.state.knownCatalogIdentifiers).toEqual({})
+  })
+
   it('keeps a selected search match label while preserving official label IDs', () => {
     const atlas = useAtlasState()
     atlas.setLabelCatalog(permanentLabels)
@@ -75,5 +85,17 @@ describe('useAtlasState', () => {
     atlas.popRouteEndpoint()
     expect(atlas.state.measurementEndpoints).toEqual([])
     expect(atlas.state.selectedObject).toBeUndefined()
+  })
+
+  it('clears route endpoints without clearing the selected object', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+    atlas.activateCatalog(catalog, true)
+    atlas.selectMapObject(wolf)
+
+    atlas.clearRoute()
+
+    expect(atlas.state.measurementEndpoints).toEqual([])
+    expect(atlas.state.selectedObject).toBe(wolf)
   })
 })
