@@ -20,3 +20,17 @@ export type LabelEvent = {
   occurredAt: string
   payload: Record<string, unknown>
 }
+
+export type LabelCandidate = {
+  displayLabel: string
+  authority: 'NASA Exoplanet Archive hostname' | 'Gaia DR3 source ID'
+  evidence: Record<string, string>
+}
+
+export type SourceIndex = {
+  findLabelCandidates(sourceId: string): {
+    sourceId: string
+    candidates: LabelCandidate[]
+  } | undefined
+  close(): void
+}

@@ -17,6 +17,16 @@ The browser UI is a Vue 3 application. `src/App.vue` owns catalog loading, CSV v
 
 Permanent labels are loaded and validated from the evidence records in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json), not embedded in application source. They are curated-only: the browser does not create, persist, or represent new permanent labels as evidence-backed data. Search-result labels remain temporary and visually distinct.
 
+## Permanent-label source index
+
+The self-hosted label service uses a generated SQLite index to verify every source before it can receive a dynamically persistent label. Build the deployment artifact from the bundled Gaia/NASA catalogs:
+
+```sh
+python3 scripts/build_label_source_index.py
+```
+
+This creates the untracked `data/label-source-index.sqlite` artifact. Its metadata records SHA-256 hashes of both input catalogs and the source count, making the deployed index reproducible. The index only offers a NASA Exoplanet Archive `host_names` identifier for NASA-enriched sources, or the exact `Gaia DR3 <source_id>` designation for all other bundled sources. It does not generate names or aliases from positions, photometry, or inference.
+
 Run the project checks with:
 
 ```sh
