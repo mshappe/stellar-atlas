@@ -9,6 +9,22 @@ npm install
 npm run dev
 ```
 
+## Application architecture
+
+The browser UI is a Vue 3 application. `src/App.vue` owns catalog loading, CSV validation, user-visible status, and the `useAtlasState` composable. The composable uses shallow reactive root state so the full Gaia catalog is retained as raw row data rather than recursively proxied.
+
+`src/components/AtlasScene.vue` is the imperative Three.js boundary. It receives the raw active catalog, origin, label IDs, and route endpoints as props; it emits selection, focus, and route-pop intents. It owns WebGL/CSS2D renderer lifecycle, point geometry, labels, picking, the SVG route overlay, resizing, and resource disposal. Sidebar components render the declarative catalog controls, search, selection, route, and reference-frame panels. The astronomy calculations, radius filtering, catalog search, label behavior, and route arithmetic remain in the test-covered `src/catalog.ts` utility module.
+
+Permanent labels are loaded and validated from the evidence records in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json), not embedded in application source. They are curated-only: the browser does not create, persist, or represent new permanent labels as evidence-backed data. Search-result labels remain temporary and visually distinct.
+
+Run the project checks with:
+
+```sh
+npm test
+npm run lint
+npm run build
+```
+
 ## Bundled confirmed-exoplanet host prototype
 
 `public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv` contains 1,000 Gaia DR3 stars: 999 are joined by `gaia_dr3_id` to at least one record in the NASA Exoplanet Archive's Planetary Systems Composite Parameters (`PSCompPars`) table, which contains confirmed planets and published default parameter sets; Unukalhai is one explicitly marked named reference star. The selected-source panel identifies each row's catalog category and reports host/planet details only where they are present.
@@ -25,7 +41,7 @@ When present, point color is a visual interpolation of Gaia DR3's measured `bp_r
 
 ## Labels
 
-The map displays twelve deliberately limited, evidence-backed labels: Tau Ceti, Proxima Centauri, Epsilon Eridani, Barnard's Star, TRAPPIST-1, 55 Cancri, 51 Pegasi, Gliese 581, Ross 508, LHS 1140, Kapteyn's Star, and Unukalhai (Serpent's Head). Each is an exact Gaia DR3 source ID in the bundled 300-ly volume. The matched NASA Archive host identifier, alias resolution, and the Gaia DR2→DR3 crossmatch used for the one non-host label are recorded in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json). No position-based name guessing is used. The **Hide unlabeled stars** control filters the active catalog to these exact source IDs.
+The map displays twelve deliberately limited, evidence-backed labels: Tau Ceti, Proxima Centauri, Epsilon Eridani, Barnard's Star, TRAPPIST-1, 55 Cancri, 51 Pegasi, Gliese 581, Ross 508, LHS 1140, Kapteyn's Star, and Unukalhai (Serpent's Head). Each is an exact Gaia DR3 source ID in the bundled 300-ly volume. The matched NASA Archive host identifier, alias resolution, and the Gaia DR2→DR3 crossmatch used for the one non-host label are recorded in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json). No position-based name guessing is used. The **Hide unlabeled stars** control filters the active catalog to permanent labels plus any current temporary search labels.
 
 Selected-source and measurement display names expand standard Bayer and Flamsteed designations: for example, the NASA host identifier `47 UMa` is displayed as **47 Ursae Majoris**. The original NASA identifier remains visible in the selected-source details.
 

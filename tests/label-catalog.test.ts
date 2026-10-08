@@ -1,0 +1,34 @@
+import { describe, expect, it } from 'vitest'
+import { parseLabelCatalog } from '../src/label-catalog'
+
+describe('parseLabelCatalog', () => {
+  it('extracts permanent labels from provenance records', () => {
+    const catalog = parseLabelCatalog({
+      labels: [
+        {
+          gaia_dr3_source_id: '2635476908753563008',
+          display_label: 'TRAPPIST-1',
+        },
+      ],
+    })
+
+    expect(catalog.labelsBySourceId).toEqual({
+      '2635476908753563008': 'TRAPPIST-1',
+    })
+    expect(catalog.sourceIds).toEqual(new Set(['2635476908753563008']))
+  })
+
+  it.each([
+    [{}, 'must contain a labels array'],
+    [{ labels: [{ gaia_dr3_source_id: 'not-a-gaia-id', display_label: 'Example' }] }, 'invalid Gaia DR3 source ID'],
+    [{ labels: [{ gaia_dr3_source_id: '123', display_label: ' ' }] }, 'empty display label'],
+    [{
+      labels: [
+        { gaia_dr3_source_id: '123', display_label: 'First' },
+        { gaia_dr3_source_id: '123', display_label: 'Second' },
+      ],
+    }, 'duplicate Gaia DR3 source ID'],
+  ])('rejects malformed label data', (value, message) => {
+    expect(() => parseLabelCatalog(value)).toThrow(message)
+  })
+})
