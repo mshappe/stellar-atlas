@@ -3,14 +3,21 @@ import { mkdirSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseLabelCatalog } from '../src/label-catalog'
-import type { LabelEvent, LabelSeed, PersistentLabel } from './contracts'
+import type { LabelEvent, LabelSeed, MaintainerLabel, PersistentLabel } from './contracts'
 
 const SCHEMA_VERSION = 1
 const schemaPath = fileURLToPath(new URL('./schema.sql', import.meta.url))
 
+export class LabelAlreadyExistsError extends Error {
+  constructor(sourceId: string) {
+    super(`Gaia DR3 source ID ${sourceId} already has a permanent label.`)
+  }
+}
+
 export type LabelStore = {
   listLabels(): PersistentLabel[]
   listEvents(): LabelEvent[]
+  createMaintainerLabel(label: MaintainerLabel): PersistentLabel
   schemaVersion(): number
   close(): void
 }
@@ -55,12 +62,14 @@ export function openLabelStore(databasePath: string, seeds: LabelSeed[], now = (
       FROM label_events
       ORDER BY id
     `).all().map((row) => mapEvent(row)),
+    createMaintainerLabel: (label) => createMaintainerLabel(database, label, now),
     schemaVersion: () => {
       const row = database.prepare('SELECT MAX(version) AS version FROM schema_migrations').get()
       return isRecord(row) && typeof row.version === 'number' ? row.version : 0
     },
     close: () => database.close(),
   }
+
 }
 
 function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => string) {
@@ -92,6 +101,7 @@ function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => strin
         if (existingLabel.origin === 'seed' && !findSeedEvent.get(seed.gaiaSourceId)) {
           insertEvent.run(seed.gaiaSourceId, timestamp, payload)
         }
+
         continue
       }
       insertLabel.run(seed.gaiaSourceId, seed.displayLabel, JSON.stringify(seed.evidence), timestamp)
@@ -101,6 +111,37 @@ function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => strin
   } catch (error) {
     database.exec('ROLLBACK')
     throw error
+  }
+}
+
+function createMaintainerLabel(database: DatabaseSync, label: MaintainerLabel, now: () => string): PersistentLabel {
+  const findLabel = database.prepare('SELECT gaia_source_id FROM labels WHERE gaia_source_id = ?')
+  const insertLabel = database.prepare(`
+    INSERT INTO labels (gaia_source_id, display_label, evidence_json, origin, created_at, created_by)
+    VALUES (?, ?, ?, 'maintainer', ?, ?)
+  `)
+  const insertEvent = database.prepare(`
+    INSERT INTO label_events (gaia_source_id, event_type, actor_login, occurred_at, payload_json)
+    VALUES (?, 'created', ?, ?, ?)
+  `)
+  const createdAt = now()
+  database.exec('BEGIN IMMEDIATE')
+  try {
+    if (findLabel.get(label.gaiaSourceId)) throw new LabelAlreadyExistsError(label.gaiaSourceId)
+    insertLabel.run(label.gaiaSourceId, label.displayLabel, JSON.stringify(label.evidence), createdAt, label.createdBy)
+    insertEvent.run(label.gaiaSourceId, label.createdBy, createdAt, JSON.stringify({
+      display_label: label.displayLabel,
+      evidence: label.evidence,
+    }))
+    database.exec('COMMIT')
+  } catch (error) {
+    database.exec('ROLLBACK')
+    throw error
+  }
+  return {
+    ...label,
+    origin: 'maintainer',
+    createdAt,
   }
 }
 

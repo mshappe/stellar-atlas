@@ -12,6 +12,10 @@ export type PersistentLabel = LabelSeed & {
   createdBy: string | undefined
 }
 
+export type MaintainerLabel = LabelSeed & {
+  createdBy: string
+}
+
 export type LabelEvent = {
   id: number
   gaiaSourceId: string
