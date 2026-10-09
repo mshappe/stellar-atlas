@@ -8,6 +8,7 @@ defineProps<{
   labelCatalogStatus: string
   projectionEpoch: number | undefined
   projectionAvailable: boolean
+  projectedSourceCount: number | undefined
 }>()
 
 const emit = defineEmits<{
@@ -67,6 +68,12 @@ function changeProjectionEpoch(event: Event) {
     >
       {{ hideUnlabeledStars ? 'Show unlabeled stars' : 'Hide unlabeled stars' }}
     </button>
+    <p
+      v-if="projectionEpoch !== undefined"
+      class="status"
+    >
+      {{ projectedSourceCount?.toLocaleString() }} focused sources have measured 6D inputs and are rendered at the projected epoch. Their physical displacement may be visually small within the 300-ly field; select a source for exact coordinates and displacement.
+    </p>
     <label
       class="catalog-control"
       for="projection-epoch"

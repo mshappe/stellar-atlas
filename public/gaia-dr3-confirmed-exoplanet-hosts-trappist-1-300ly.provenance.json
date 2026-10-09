@@ -45,13 +45,19 @@
     ],
     "output_row_count": 1000,
     "coverage": {
-      "sources_with_radial_velocity_and_error": 946,
+      "sources_with_gaia_radial_velocity_and_error": 946,
+      "sources_with_supplemental_radial_velocity_and_error": 41,
+      "sources_with_any_cited_radial_velocity_and_error": 987,
       "sources_with_five_parameter_astrometric_solution": 923,
       "sources_with_baseline_6d_inputs": 886,
       "sources_with_duplicated_source_flag": 78,
       "sources_with_ruwe_above_1_4": 81
     },
     "generator": "scripts/enrich_focused_catalog_kinematics.py"
+  },
+  "projection_radial_velocity_supplements": {
+    "provenance_file": "focused-radial-velocity-supplements.provenance.json",
+    "purpose": "Supply cited SIMBAD radial velocities only where Gaia DR3 omits a radial velocity or its uncertainty. The supplemental source ID must exactly match a focused Gaia DR3 source ID."
   },
   "volume": {
     "center": {

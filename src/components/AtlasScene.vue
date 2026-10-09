@@ -79,7 +79,8 @@ onBeforeUnmount(() => {
   routeOverlay?.remove()
 })
 
-watch([() => props.catalog, () => props.selectedOrigin, () => props.projectionEpoch], renderCatalog)
+watch([() => props.catalog, () => props.selectedOrigin], () => renderCatalog(true))
+watch(() => props.projectionEpoch, () => renderCatalog(false))
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()
@@ -182,7 +183,7 @@ function render() {
   animationFrame = requestAnimationFrame(render)
 }
 
-function renderCatalog() {
+function renderCatalog(resetCamera = true) {
   if (!scene || !camera || !controls) return
   clearRenderedCatalog()
   const rows = catalogRows.value
@@ -238,13 +239,15 @@ function renderCatalog() {
   setPointVisibility()
   updateSolRenderPosition()
 
-  const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
-  camera.position.set(framingDistance, framingDistance * 0.65, framingDistance * 0.45)
-  camera.near = Math.max(farthest / 1e7, 0.00001)
-  camera.far = Math.max(farthest * 10, 100)
-  camera.updateProjectionMatrix()
-  controls.target.set(0, 0, 0)
-  controls.update()
+  if (resetCamera) {
+    const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
+    camera.position.set(framingDistance, framingDistance * 0.65, framingDistance * 0.45)
+    camera.near = Math.max(farthest / 1e7, 0.00001)
+    camera.far = Math.max(farthest * 10, 100)
+    camera.updateProjectionMatrix()
+    controls.target.set(0, 0, 0)
+    controls.update()
+  }
   axes?.scale.setScalar(Math.max(MAX_DISTANCE_PARSECS * 0.1, farthest * 0.1, 1))
 }
 

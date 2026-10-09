@@ -23,6 +23,9 @@ export type GaiaRow = {
   pmdecError?: number
   radialVelocity?: number
   radialVelocityError?: number
+  radialVelocitySource?: string
+  radialVelocityQuality?: string
+  radialVelocityBibliographyCode?: string
   ruwe?: number
   duplicatedSource?: boolean
   raDecCorrelation?: number

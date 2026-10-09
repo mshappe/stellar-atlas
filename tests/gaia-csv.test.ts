@@ -31,8 +31,8 @@ describe('parseGaiaCsv', () => {
 
   it('preserves Gaia kinematics, correlations, and quality flags when supplied', () => {
     const catalog = parseGaiaCsv([
-      'source_id,ra,dec,parallax,astrometric_params_solved,pmra,pmra_error,pmdec,pmdec_error,radial_velocity,radial_velocity_error,ruwe,duplicated_source,ra_dec_corr,ra_parallax_corr,ra_pmra_corr,ra_pmdec_corr,dec_parallax_corr,dec_pmra_corr,dec_pmdec_corr,parallax_pmra_corr,parallax_pmdec_corr,pmra_pmdec_corr',
-      '123,1,2,10,31,3,0.1,4,0.2,5,0.3,1.02,false,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1',
+      'source_id,ra,dec,parallax,astrometric_params_solved,pmra,pmra_error,pmdec,pmdec_error,radial_velocity,radial_velocity_error,radial_velocity_source,radial_velocity_quality,radial_velocity_bibliography_code,ruwe,duplicated_source,ra_dec_corr,ra_parallax_corr,ra_pmra_corr,ra_pmdec_corr,dec_parallax_corr,dec_pmra_corr,dec_pmdec_corr,parallax_pmra_corr,parallax_pmdec_corr,pmra_pmdec_corr',
+      '123,1,2,10,31,3,0.1,4,0.2,5,0.3,SIMBAD,A,2020AJ....160..120J,1.02,false,0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1',
     ].join('\n'))
 
     expect(catalog.rows[0]).toMatchObject({
@@ -43,6 +43,9 @@ describe('parseGaiaCsv', () => {
       pmdecError: 0.2,
       radialVelocity: 5,
       radialVelocityError: 0.3,
+      radialVelocitySource: 'SIMBAD',
+      radialVelocityQuality: 'A',
+      radialVelocityBibliographyCode: '2020AJ....160..120J',
       ruwe: 1.02,
       duplicatedSource: false,
       raDecCorrelation: 0.01,

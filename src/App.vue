@@ -58,6 +58,9 @@ const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
+const projectedSourceCount = computed(() => projectionEpoch.value === undefined
+  ? undefined
+  : (atlas.state.activeCatalog?.rows.filter(hasMeasuredSixDimensionalState).length ?? 0))
 
 function setProjectionEpoch(epoch: number | undefined) {
   if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
@@ -324,8 +327,20 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
-    fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? 'Measured Gaia proper motion and radial velocity available' : 'Unavailable: this source is excluded from projected rendering'])
-    if (hasMeasuredSixDimensionalState(object)) {
+    fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])
+    if (object.radialVelocitySource && object.radialVelocitySource !== 'Gaia DR3') {
+      fields.push(['Radial-velocity source', object.radialVelocitySource])
+      if (object.radialVelocityQuality) fields.push(['Radial-velocity quality', object.radialVelocityQuality])
+      if (object.radialVelocityBibliographyCode) fields.push(['Radial-velocity bibliography', object.radialVelocityBibliographyCode])
+    }
+    const projected = propagateGaiaPosition(object, projectionEpoch.value)
+    if (projected) {
+      const current = cartesianPosition(object)
+      const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
+      fields.push(['Projected barycentric X (pc)', projected[0].toPrecision(10)])
+      fields.push(['Projected barycentric Y (pc)', projected[1].toPrecision(10)])
+      fields.push(['Projected barycentric Z (pc)', projected[2].toPrecision(10)])
+      fields.push(['J2016.0 to projected displacement (AU)', displacementAu.toPrecision(8)])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
       fields.push(['Projected 1σ Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
@@ -442,6 +457,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :label-catalog-status="labelCatalogStatus"
           :projection-epoch="projectionEpoch"
           :projection-available="atlas.state.activeFocusedCatalog"
+          :projected-source-count="projectedSourceCount"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"

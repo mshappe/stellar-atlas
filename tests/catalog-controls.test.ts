@@ -13,6 +13,7 @@ describe('CatalogControls', () => {
         labelCatalogStatus: '',
         projectionEpoch: undefined,
         projectionAvailable: false,
+        projectedSourceCount: undefined,
       },
     })
 
@@ -29,6 +30,7 @@ describe('CatalogControls', () => {
         labelCatalogStatus: '',
         projectionEpoch: 5026,
         projectionAvailable: true,
+        projectedSourceCount: 886,
       },
     })
 
@@ -48,6 +50,7 @@ describe('CatalogControls', () => {
         labelCatalogStatus: '',
         projectionEpoch: undefined,
         projectionAvailable: false,
+        projectedSourceCount: undefined,
       },
     })
 

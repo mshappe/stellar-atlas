@@ -2,6 +2,7 @@
 """Attach Gaia DR3 kinematics and quality evidence to a focused catalog."""
 
 import csv
+import json
 import sys
 from pathlib import Path
 
@@ -16,6 +17,9 @@ KINEMATIC_COLUMNS = (
     "pmdec_error",
     "radial_velocity",
     "radial_velocity_error",
+    "radial_velocity_source",
+    "radial_velocity_quality",
+    "radial_velocity_bibliography_code",
     "ruwe",
     "duplicated_source",
     "ra_dec_corr",
@@ -30,8 +34,20 @@ KINEMATIC_COLUMNS = (
     "pmra_pmdec_corr",
 )
 
+SUPPLEMENT_PATH = Path(__file__).parent.parent / "public" / "focused-radial-velocity-supplements.provenance.json"
+
 
 def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
+    supplements = {
+        record["gaia_dr3_source_id"]: {
+            "radial_velocity": str(record["radial_velocity_km_s"]),
+            "radial_velocity_error": str(record["radial_velocity_error_km_s"]),
+            "radial_velocity_source": "SIMBAD",
+            "radial_velocity_quality": record["quality"],
+            "radial_velocity_bibliography_code": record["bibliography_code"],
+        }
+        for record in json.loads(SUPPLEMENT_PATH.read_text(encoding="utf-8"))["records"]
+    }
     with kinematics_path.open(newline="", encoding="utf-8") as source:
         kinematics = {row["source_id"]: row for row in csv.DictReader(source)}
 
@@ -55,7 +71,19 @@ def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
         for row in rows:
             writer.writerow({
                 **{fieldname: row[fieldname] for fieldname in fieldnames if fieldname not in KINEMATIC_COLUMNS},
-                **{column: kinematics[row["source_id"]][column] for column in KINEMATIC_COLUMNS},
+                **{
+                    column: (
+                        supplements.get(row["source_id"], {}).get(column)
+                        or (
+                            "Gaia DR3"
+                            if column == "radial_velocity_source"
+                            and kinematics[row["source_id"]]["radial_velocity"]
+                            and kinematics[row["source_id"]]["radial_velocity_error"]
+                            else kinematics[row["source_id"]].get(column, "")
+                        )
+                    )
+                    for column in KINEMATIC_COLUMNS
+                },
             })
 
 
