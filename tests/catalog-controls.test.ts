@@ -12,6 +12,7 @@ describe('CatalogControls', () => {
         importStatus: 'Ready.',
         labelCatalogStatus: '',
         projectionEpoch: undefined,
+        projectionAvailable: false,
       },
     })
 
@@ -27,6 +28,7 @@ describe('CatalogControls', () => {
         importStatus: 'Ready.',
         labelCatalogStatus: '',
         projectionEpoch: 5026,
+        projectionAvailable: true,
       },
     })
 
@@ -35,5 +37,21 @@ describe('CatalogControls', () => {
 
     await wrapper.get('button.measure-clear').trigger('click')
     expect(wrapper.emitted('changeProjectionEpoch')).toContainEqual([undefined])
+  })
+
+  it('disables projected epochs for catalogs without enriched 6D inputs', () => {
+    const wrapper = mount(CatalogControls, {
+      props: {
+        selectedCatalogKey: 'all-stars',
+        hideUnlabeledStars: false,
+        importStatus: 'Ready.',
+        labelCatalogStatus: '',
+        projectionEpoch: undefined,
+        projectionAvailable: false,
+      },
+    })
+
+    expect((wrapper.get('#projection-epoch').element as HTMLInputElement).disabled).toBe(true)
+    expect(wrapper.text()).toContain('require the enriched focused catalog')
   })
 })

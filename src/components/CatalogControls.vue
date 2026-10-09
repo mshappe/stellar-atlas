@@ -7,6 +7,7 @@ defineProps<{
   importStatus: string
   labelCatalogStatus: string
   projectionEpoch: number | undefined
+  projectionAvailable: boolean
 }>()
 
 const emit = defineEmits<{
@@ -78,9 +79,16 @@ function changeProjectionEpoch(event: Event) {
         max="5526"
         step="1"
         :value="projectionEpoch ?? 5026"
+        :disabled="!projectionAvailable"
         @input="changeProjectionEpoch"
       >
     </label>
+    <p
+      v-if="!projectionAvailable"
+      class="status"
+    >
+      Projected epochs require the enriched focused catalog.
+    </p>
     <button
       v-if="projectionEpoch !== undefined"
       class="measure-clear"

@@ -60,6 +60,7 @@ const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
 
 function setProjectionEpoch(epoch: number | undefined) {
+  if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
   projectionEpoch.value = epoch
   atlas.clearRoute()
 }
@@ -80,6 +81,7 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const definition = BUNDLED_CATALOGS[catalogKey]
   const loadId = ++catalogLoadId
   selectedBundledCatalogKey.value = catalogKey
+  if (!definition.focusedCatalog) setProjectionEpoch(undefined)
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
@@ -103,6 +105,7 @@ async function importCatalog(file: File) {
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(catalog, false)
     selectedBundledCatalogKey.value = undefined
+    setProjectionEpoch(undefined)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
@@ -438,6 +441,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :import-status="importStatus"
           :label-catalog-status="labelCatalogStatus"
           :projection-epoch="projectionEpoch"
+          :projection-available="atlas.state.activeFocusedCatalog"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
