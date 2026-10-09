@@ -81,7 +81,9 @@ export function createApiServer(config: ApiConfig) {
       }
       return sendJson(response, 404, { error: 'Not found.' })
     } catch (error) {
-      return sendJson(response, 500, { error: error instanceof Error ? error.message : 'Unexpected server error.' })
+      if (error instanceof ApiRequestError) return sendJson(response, error.status, { error: error.message })
+      console.error(error)
+      return sendJson(response, 500, { error: 'Unexpected server error.' })
     }
   })
 }
@@ -128,9 +130,22 @@ async function readJson(request: IncomingMessage) {
   let body = ''
   for await (const chunk of request) {
     body += chunk
-    if (body.length > 8192) throw new Error('Request body is too large.')
+    if (body.length > 8192) throw new ApiRequestError(413, 'Request body is too large.')
   }
-  return JSON.parse(body)
+  try {
+    return JSON.parse(body)
+  } catch {
+    throw new ApiRequestError(400, 'Request body must be valid JSON.')
+  }
+}
+
+class ApiRequestError extends Error {
+  readonly status: 400 | 413
+
+  constructor(status: 400 | 413, message: string) {
+    super(message)
+    this.status = status
+  }
 }
 
 function sendJson(response: ServerResponse, status: number, body: unknown) {

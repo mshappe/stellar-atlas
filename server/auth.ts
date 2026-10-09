@@ -7,16 +7,17 @@ export type Session = {
 
 type SignedPayload = Session & {
   nonce: string
+  kind: 'session' | 'oauth-state'
 }
 
 export function createSignedSession(login: string, secret: string, now = Date.now(), ttlMilliseconds = 8 * 60 * 60 * 1000) {
-  return sign({ login, expiresAt: now + ttlMilliseconds, nonce: randomBytes(16).toString('base64url') }, secret)
+  return sign({ login, expiresAt: now + ttlMilliseconds, nonce: randomBytes(16).toString('base64url'), kind: 'session' }, secret)
 }
 
 export function readSignedSession(token: string | undefined, secret: string, now = Date.now()): Session | undefined {
   if (!token) return undefined
   const payload = verify(token, secret)
-  if (!payload || typeof payload.login !== 'string' || typeof payload.expiresAt !== 'number' || payload.expiresAt <= now) return undefined
+  if (!payload || payload.kind !== 'session' || payload.expiresAt <= now) return undefined
   return { login: payload.login, expiresAt: payload.expiresAt }
 }
 
@@ -24,14 +25,14 @@ export function createOAuthState(secret: string, now = Date.now()) {
   const nonce = randomBytes(16).toString('base64url')
   return {
     nonce,
-    token: sign({ login: 'oauth-state', expiresAt: now + 10 * 60 * 1000, nonce }, secret),
+    token: sign({ login: 'oauth-state', expiresAt: now + 10 * 60 * 1000, nonce, kind: 'oauth-state' }, secret),
   }
 }
 
 export function verifyOAuthState(state: string | undefined, token: string | undefined, secret: string, now = Date.now()) {
   if (!state || !token) return false
   const payload = verify(token, secret)
-  return payload?.login === 'oauth-state' && payload.expiresAt > now && payload.nonce === state
+  return payload?.kind === 'oauth-state' && payload.login === 'oauth-state' && payload.expiresAt > now && payload.nonce === state
 }
 
 function sign(payload: SignedPayload, secret: string) {
@@ -52,6 +53,7 @@ function verify(token: string, secret: string): SignedPayload | undefined {
       typeof payload?.login !== 'string'
       || typeof payload?.expiresAt !== 'number'
       || typeof payload?.nonce !== 'string'
+      || (payload?.kind !== 'session' && payload?.kind !== 'oauth-state')
     ) return undefined
     return payload
   } catch {

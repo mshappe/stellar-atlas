@@ -19,5 +19,6 @@ describe('signed authentication tokens', () => {
     expect(verifyOAuthState(state.nonce, state.token, secret, now)).toBe(true)
     expect(verifyOAuthState('different', state.token, secret, now)).toBe(false)
     expect(verifyOAuthState(state.nonce, state.token, secret, now + 10 * 60 * 1000)).toBe(false)
+    expect(readSignedSession(state.token, secret, now)).toBeUndefined()
   })
 })
