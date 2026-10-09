@@ -29,7 +29,7 @@ export function readSignedSession(token: string | undefined, secret: string, now
   return { login: payload.login, expiresAt: payload.expiresAt }
 }
 
-export function createOAuthState(secret: string, now = Date.now()) {
+export function createCallbackState(secret: string, now = Date.now()) {
   const nonce = randomBytes(16).toString('base64url')
   return {
     nonce,
@@ -37,7 +37,7 @@ export function createOAuthState(secret: string, now = Date.now()) {
   }
 }
 
-export function verifyOAuthState(state: string | undefined, token: string | undefined, secret: string, now = Date.now()) {
+export function verifyCallbackState(state: string | undefined, token: string | undefined, secret: string, now = Date.now()) {
   if (!state || !token) return false
   const payload = decryptOAuthState(token, secret)
   return Boolean(payload && payload.expiresAt > now && timingSafeTextEqual(payload.nonce, state))

@@ -2,7 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { createReadStream, promises as filesystem } from 'node:fs'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { URL } from 'node:url'
-import { createOAuthState, createSignedSession, readSignedSession, verifyOAuthState } from './auth'
+import { createCallbackState, createSignedSession, readSignedSession, verifyCallbackState } from './auth'
 import { LabelAlreadyExistsError, type LabelStore } from './label-store'
 import type { SourceIndex } from './contracts'
 
@@ -39,7 +39,7 @@ export function createApiServer(config: ApiConfig) {
         })
       }
       if (request.method === 'GET' && url.pathname === '/api/auth/github') {
-        const state = createOAuthState(config.oauthStateSecret)
+        const state = createCallbackState(config.oauthStateSecret)
         setCookie(response, STATE_COOKIE, state.token, 10 * 60)
         const authorizationUrl = new URL('https://github.com/login/oauth/authorize')
         authorizationUrl.searchParams.set('client_id', config.githubClientId)
@@ -49,7 +49,7 @@ export function createApiServer(config: ApiConfig) {
         return redirect(response, authorizationUrl.toString())
       }
       if (request.method === 'GET' && url.pathname === '/api/auth/github/callback') {
-        if (!verifyOAuthState(url.searchParams.get('state') ?? undefined, readCookies(request)[STATE_COOKIE], config.oauthStateSecret)) {
+        if (!verifyCallbackState(url.searchParams.get('state') ?? undefined, readCookies(request)[STATE_COOKIE], config.oauthStateSecret)) {
           return sendJson(response, 400, { error: 'Invalid OAuth state.' })
         }
         const code = url.searchParams.get('code')

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createOAuthState, createSignedSession, readSignedSession, verifyOAuthState } from '../server/auth'
+import { createCallbackState, createSignedSession, readSignedSession, verifyCallbackState } from '../server/auth'
 
 const secret = 'test-secret'
 const now = 1_700_000_000_000
@@ -14,11 +14,11 @@ describe('signed authentication tokens', () => {
   })
 
   it('binds OAuth callbacks to the signed state nonce', () => {
-    const state = createOAuthState(secret, now)
+    const state = createCallbackState(secret, now)
 
-    expect(verifyOAuthState(state.nonce, state.token, secret, now)).toBe(true)
-    expect(verifyOAuthState('different', state.token, secret, now)).toBe(false)
-    expect(verifyOAuthState(state.nonce, state.token, secret, now + 10 * 60 * 1000)).toBe(false)
+    expect(verifyCallbackState(state.nonce, state.token, secret, now)).toBe(true)
+    expect(verifyCallbackState('different', state.token, secret, now)).toBe(false)
+    expect(verifyCallbackState(state.nonce, state.token, secret, now + 10 * 60 * 1000)).toBe(false)
     expect(readSignedSession(state.token, secret, now)).toBeUndefined()
   })
 })
