@@ -45,7 +45,7 @@ export function verifyOAuthState(state: string | undefined, token: string | unde
 
 function sign(payload: SignedPayload, secret: string) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url')
-  const signature = createHmac('sha256', secret).update(encoded).digest('base64url') // lgtm[js/insufficient-password-hash] SESSION_SECRET is a high-entropy MAC key, not a password.
+  const signature = createHmac('sha256', secret).update(encoded).digest('base64url')
   return `${encoded}.${signature}`
 }
 
