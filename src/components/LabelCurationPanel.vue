@@ -6,12 +6,17 @@ const props = defineProps<{
   sourceId: string | undefined
   existingLabel: string | undefined
   candidates: LabelCandidates | undefined
-  status: string
+  sessionStatus: string
+  candidateError: string
+  creationError: string
+  loadingCandidates: boolean
+  creatingLabel: boolean
 }>()
 
 const emit = defineEmits<{
   signIn: []
   create: [sourceId: string, displayLabel: string]
+  retryCandidates: []
 }>()
 
 function createLabel(event: Event) {
@@ -26,8 +31,9 @@ function createLabel(event: Event) {
     <p
       v-if="session === undefined"
       class="status"
+      role="status"
     >
-      {{ status || 'Checking maintainer session…' }}
+      {{ sessionStatus || 'Checking maintainer session…' }}
     </p>
     <template v-else-if="!session.authenticated">
       <p>Maintainers may add only server-verified catalog identifiers.</p>
@@ -64,14 +70,36 @@ function createLabel(event: Event) {
         Signed in as {{ session.login }}.
       </p>
       <p
-        v-if="status"
+        v-if="candidateError"
         class="status"
         role="status"
       >
-        {{ status }}
+        {{ candidateError }}
+      </p>
+      <button
+        v-if="candidateError"
+        class="measure-clear"
+        type="button"
+        @click="emit('retryCandidates')"
+      >
+        Retry verified candidates
+      </button>
+      <p
+        v-if="creationError"
+        class="status"
+        role="status"
+      >
+        {{ creationError }}
+      </p>
+      <p
+        v-if="creatingLabel"
+        class="status"
+        role="status"
+      >
+        Creating permanent label…
       </p>
       <form
-        v-else-if="candidates?.sourceId === sourceId"
+        v-if="candidates?.sourceId === sourceId"
         class="curation-form"
         @submit.prevent="createLabel"
       >
@@ -80,6 +108,7 @@ function createLabel(event: Event) {
           <select
             name="displayLabel"
             required
+            :disabled="creatingLabel"
           >
             <option
               v-for="candidate in candidates.candidates"
@@ -93,13 +122,15 @@ function createLabel(event: Event) {
         <button
           class="measure-clear"
           type="submit"
+          :disabled="creatingLabel"
         >
-          Make permanent
+          {{ creatingLabel ? 'Creating permanent label…' : 'Make permanent' }}
         </button>
       </form>
       <p
-        v-else
+        v-else-if="loadingCandidates && !candidateError"
         class="status"
+        role="status"
       >
         Loading server-verified label candidates…
       </p>

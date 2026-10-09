@@ -32,6 +32,21 @@ const catalogCsv = [
   `${secondSource.sourceId},${secondSource.ra},${secondSource.dec},${secondSource.parallax}`,
 ].join('\n')
 
+function mountApp() {
+  return mount(App, {
+    global: {
+      stubs: {
+        AtlasScene: { name: 'AtlasScene', props: ['permanentLabels'], template: '<div />' },
+        CatalogControls: true,
+        CatalogSearch: true,
+        ReferenceFramePanel: true,
+        RoutePanel: true,
+        SelectionPanel: true,
+      },
+    },
+  })
+}
+
 afterEach(() => {
   vi.unstubAllGlobals()
 })
@@ -78,18 +93,7 @@ describe('App label curation', () => {
       throw new Error(`Unexpected request: ${url}`)
     }))
 
-    const wrapper = mount(App, {
-      global: {
-        stubs: {
-          AtlasScene: { name: 'AtlasScene', props: ['permanentLabels'], template: '<div />' },
-          CatalogControls: true,
-          CatalogSearch: true,
-          ReferenceFramePanel: true,
-          RoutePanel: true,
-          SelectionPanel: true,
-        },
-      },
-    })
+    const wrapper = mountApp()
     await flushPromises()
 
     const scene = wrapper.findComponent({ name: 'AtlasScene' })
@@ -106,10 +110,88 @@ describe('App label curation', () => {
 
     const panel = wrapper.findComponent({ name: 'LabelCurationPanel' })
     expect(panel.props('sourceId')).toBe(secondSource.sourceId)
-    expect(panel.props('status')).toBe('')
+    expect(panel.props('candidateError')).toBe('')
     expect(panel.text()).toContain(`Gaia DR3 ${secondSource.sourceId}`)
     expect(scene.props('permanentLabels')).toEqual({
       [firstSource.sourceId]: `Gaia DR3 ${firstSource.sourceId}`,
     })
+  })
+
+  it('retries a failed candidate request for the selected source', async () => {
+    let candidateRequests = 0
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) {
+        candidateRequests += 1
+        if (candidateRequests === 1) return Promise.resolve(new Response('', { status: 503 }))
+        return Promise.resolve(Response.json({
+          sourceId: firstSource.sourceId,
+          candidates: [{
+            displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            authority: 'Gaia DR3 source ID',
+          }],
+        }))
+      }
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+
+    const panel = wrapper.findComponent({ name: 'LabelCurationPanel' })
+    expect(panel.props('candidateError')).toContain('unavailable')
+    panel.vm.$emit('retryCandidates')
+    await flushPromises()
+
+    expect(candidateRequests).toBe(2)
+    expect(panel.props('candidates')).toMatchObject({ sourceId: firstSource.sourceId })
+    expect(panel.props('candidateError')).toBe('')
+  })
+
+  it('restores the candidate form after a label-write failure', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url === '/api/labels' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({ error: 'Candidate is no longer valid.' }, { status: 422 }))
+      }
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) return Promise.resolve(Response.json({
+        sourceId: firstSource.sourceId,
+        candidates: [{
+          displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          authority: 'Gaia DR3 source ID',
+        }],
+      }))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+    const panel = wrapper.findComponent({ name: 'LabelCurationPanel' })
+    panel.vm.$emit('create', firstSource.sourceId, `Gaia DR3 ${firstSource.sourceId}`)
+    await flushPromises()
+
+    expect(panel.props('creationError')).toContain('could not be created')
+    expect(panel.props('creatingLabel')).toBe(false)
+    expect(panel.find('form').exists()).toBe(true)
   })
 })

@@ -30,7 +30,10 @@ const labelCatalogStatus = ref('')
 const session = ref<AtlasSession>()
 const sessionStatus = ref('')
 const labelCandidates = ref<LabelCandidates>()
-const curationStatus = ref('')
+const candidateError = ref('')
+const creationError = ref('')
+const isLoadingCandidates = ref(false)
+const isCreatingLabel = ref(false)
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
@@ -58,6 +61,8 @@ onMounted(() => {
 
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
   curationRequestId += 1
+  creationError.value = ''
+  isCreatingLabel.value = false
   void refreshLabelCandidates()
 })
 
@@ -119,15 +124,21 @@ async function refreshLabelCandidates() {
   const sourceId = selectedGaiaSourceId.value
   const loadId = ++candidateLoadId
   labelCandidates.value = undefined
-  curationStatus.value = ''
-  if (!sourceId || !session.value?.maintainer || selectedPermanentLabel.value) return
+  candidateError.value = ''
+  if (!sourceId || !session.value?.maintainer || selectedPermanentLabel.value) {
+    isLoadingCandidates.value = false
+    return
+  }
+  isLoadingCandidates.value = true
   try {
     const candidates = await loadLabelCandidates(sourceId)
     if (loadId !== candidateLoadId || selectedGaiaSourceId.value !== sourceId) return
     labelCandidates.value = candidates
   } catch (error) {
     if (loadId !== candidateLoadId) return
-    curationStatus.value = `Verified label candidates are unavailable: ${error instanceof Error ? error.message : 'unknown error'}.`
+    candidateError.value = `Verified label candidates are unavailable: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    if (loadId === candidateLoadId) isLoadingCandidates.value = false
   }
 }
 
@@ -137,17 +148,19 @@ function signInForCuration() {
 
 async function createLabel(sourceId: string, displayLabel: string) {
   const requestId = ++curationRequestId
-  curationStatus.value = 'Creating permanent label…'
+  creationError.value = ''
+  isCreatingLabel.value = true
   try {
     await createPersistentLabel(sourceId, displayLabel)
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     await refreshLabelCandidates()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
-    curationStatus.value = `Permanent label created: ${displayLabel}.`
   } catch (error) {
     if (!isCurrentCurationRequest(requestId, sourceId)) return
-    curationStatus.value = `Permanent label could not be created: ${error instanceof Error ? error.message : 'unknown error'}.`
+    creationError.value = `Permanent label could not be created: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    if (isCurrentCurationRequest(requestId, sourceId)) isCreatingLabel.value = false
   }
 }
 
@@ -366,9 +379,14 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :source-id="selectedGaiaSourceId"
           :existing-label="selectedPermanentLabel"
           :candidates="labelCandidates"
-          :status="sessionStatus || curationStatus"
+          :session-status="sessionStatus"
+          :candidate-error="candidateError"
+          :creation-error="creationError"
+          :loading-candidates="isLoadingCandidates"
+          :creating-label="isCreatingLabel"
           @sign-in="signInForCuration"
           @create="createLabel"
+          @retry-candidates="refreshLabelCandidates"
         />
         <RoutePanel
           v-bind="route"
