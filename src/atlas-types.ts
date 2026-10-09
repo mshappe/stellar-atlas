@@ -28,6 +28,7 @@ export type GaiaRow = {
   radialVelocityBibliographyCode?: string
   ruwe?: number
   duplicatedSource?: boolean
+  nssTables?: string
   raDecCorrelation?: number
   raParallaxCorrelation?: number
   raPmraCorrelation?: number

@@ -43,6 +43,25 @@ describe('CatalogControls', () => {
     expect(wrapper.emitted('changeProjectionEpoch')).toContainEqual([undefined])
   })
 
+  it('uses a dedicated control to activate the first projected epoch', async () => {
+    const wrapper = mount(CatalogControls, {
+      props: {
+        selectedCatalogKey: 'confirmed-hosts',
+        hideUnlabeledStars: false,
+        importStatus: 'Ready.',
+        labelCatalogStatus: '',
+        projectionEpoch: undefined,
+        projectionAvailable: true,
+        projectedSourceCount: undefined,
+        projectionRendering: false,
+      },
+    })
+
+    expect(wrapper.find('#projection-epoch').exists()).toBe(false)
+    await wrapper.get('button.measure-clear').trigger('click')
+    expect(wrapper.emitted('changeProjectionEpoch')).toContainEqual([5026])
+  })
+
   it('disables projected epochs for catalogs without enriched 6D inputs', () => {
     const wrapper = mount(CatalogControls, {
       props: {
@@ -57,7 +76,7 @@ describe('CatalogControls', () => {
       },
     })
 
-    expect((wrapper.get('#projection-epoch').element as HTMLInputElement).disabled).toBe(true)
+    expect((wrapper.get('button.measure-clear').element as HTMLButtonElement).disabled).toBe(true)
     expect(wrapper.text()).toContain('require the enriched focused catalog')
   })
 

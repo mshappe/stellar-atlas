@@ -56,6 +56,7 @@ export function parseGaiaCsv(text: string): ParsedCatalog {
       radialVelocityBibliographyCode: optionalText('radial_velocity_bibliography_code', values),
       ruwe: optional('ruwe', values),
       duplicatedSource: optionalBoolean('duplicated_source', values),
+      nssTables: optionalText('nss_tables', values),
       raDecCorrelation: optional('ra_dec_corr', values),
       raParallaxCorrelation: optional('ra_parallax_corr', values),
       raPmraCorrelation: optional('ra_pmra_corr', values),

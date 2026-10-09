@@ -309,8 +309,9 @@ function searchableIdentifiers(object: AtlasObject) {
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (isNonGaiaStar(object)) {
-    const [x, y, z] = object.position
-    return [
+    const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
+    const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
+    const fields: Array<[string, string]> = [
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
       ['Barycentric ICRF X (pc)', String(x)],
@@ -318,6 +319,10 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
       ['Barycentric ICRF Z (pc)', String(z)],
       ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
     ]
+    if (projectionEpoch.value !== undefined) {
+      fields.splice(2, 0, ['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
+    }
+    return fields
   }
   const distanceParsecs = 1000 / object.parallax
   const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
@@ -344,6 +349,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', object.knownSystemDiameterAu.toPrecision(8)])
   if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
+  if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
     fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])

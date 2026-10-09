@@ -9,7 +9,7 @@ const TANGENTIAL_VELOCITY_FACTOR = 4.740_470_446
 const MILLIARCSECONDS_PER_DEGREE = 3_600_000
 
 export function hasMeasuredSixDimensionalState(row: GaiaRow) {
-  return [
+  return row.astrometricParamsSolved === 31 && [
     row.parallax,
     row.pmra,
     row.pmraError,
@@ -59,7 +59,15 @@ export function astrometricCovariance(row: GaiaRow): Matrix | undefined {
     || decParallaxCorrelation === undefined || decPmraCorrelation === undefined || decPmdecCorrelation === undefined
     || parallaxPmraCorrelation === undefined || parallaxPmdecCorrelation === undefined || pmraPmdecCorrelation === undefined
   ) return undefined
-  const errors = [raError / MILLIARCSECONDS_PER_DEGREE, decError / MILLIARCSECONDS_PER_DEGREE, parallaxError, pmraError, pmdecError]
+  const declinationCosine = Math.cos(row.dec * Math.PI / 180)
+  if (Math.abs(declinationCosine) < Number.EPSILON) return undefined
+  const errors = [
+    raError / declinationCosine / MILLIARCSECONDS_PER_DEGREE,
+    decError / MILLIARCSECONDS_PER_DEGREE,
+    parallaxError,
+    pmraError,
+    pmdecError,
+  ]
   const correlations = [
     raDecCorrelation, raParallaxCorrelation, raPmraCorrelation, raPmdecCorrelation,
     decParallaxCorrelation, decPmraCorrelation, decPmdecCorrelation,

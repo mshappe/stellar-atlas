@@ -22,6 +22,7 @@ KINEMATIC_COLUMNS = (
     "radial_velocity_bibliography_code",
     "ruwe",
     "duplicated_source",
+    "nss_tables",
     "ra_dec_corr",
     "ra_parallax_corr",
     "ra_pmra_corr",
@@ -35,6 +36,7 @@ KINEMATIC_COLUMNS = (
 )
 
 SUPPLEMENT_PATH = Path(__file__).parent.parent / "public" / "focused-radial-velocity-supplements.provenance.json"
+NSS_MEMBERSHIP_PATH = Path(__file__).parent.parent / "public" / "focused-nss-membership.provenance.json"
 
 
 def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
@@ -47,6 +49,10 @@ def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
             "radial_velocity_bibliography_code": record["bibliography_code"],
         }
         for record in json.loads(SUPPLEMENT_PATH.read_text(encoding="utf-8"))["records"]
+    }
+    nss_membership = {
+        record["gaia_dr3_source_id"]: "; ".join(record["tables"])
+        for record in json.loads(NSS_MEMBERSHIP_PATH.read_text(encoding="utf-8"))["records"]
     }
     with kinematics_path.open(newline="", encoding="utf-8") as source:
         kinematics = {row["source_id"]: row for row in csv.DictReader(source)}
@@ -80,6 +86,11 @@ def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
                             and kinematics[row["source_id"]]["radial_velocity"]
                             and kinematics[row["source_id"]]["radial_velocity_error"]
                             else kinematics[row["source_id"]].get(column, "")
+                        )
+                        or (
+                            nss_membership.get(row["source_id"], "")
+                            if column == "nss_tables"
+                            else ""
                         )
                     )
                     for column in KINEMATIC_COLUMNS

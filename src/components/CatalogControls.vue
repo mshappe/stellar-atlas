@@ -84,6 +84,7 @@ function changeProjectionEpoch(event: Event) {
       Updating projected positions…
     </p>
     <label
+      v-if="projectionEpoch !== undefined"
       class="catalog-control"
       for="projection-epoch"
     >
@@ -94,11 +95,20 @@ function changeProjectionEpoch(event: Event) {
         min="5026"
         max="5526"
         step="1"
-        :value="projectionEpoch ?? 5026"
+        :value="projectionEpoch"
         :disabled="!projectionAvailable"
         @input="changeProjectionEpoch"
       >
     </label>
+    <button
+      v-else
+      class="measure-clear"
+      type="button"
+      :disabled="!projectionAvailable"
+      @click="emit('changeProjectionEpoch', 5026)"
+    >
+      Enable future projection from J5026.0
+    </button>
     <p
       v-if="!projectionAvailable"
       class="status"

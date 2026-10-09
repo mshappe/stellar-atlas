@@ -49,9 +49,15 @@
       "sources_with_supplemental_radial_velocity_and_error": 41,
       "sources_with_any_cited_radial_velocity_and_error": 987,
       "sources_with_five_parameter_astrometric_solution": 923,
-      "sources_with_baseline_6d_inputs": 886,
+      "sources_with_gaia_rv_projectable_6d_inputs": 886,
+      "sources_with_projectable_6d_inputs": 911,
       "sources_with_duplicated_source_flag": 78,
-      "sources_with_ruwe_above_1_4": 81
+      "sources_with_ruwe_above_1_4": 81,
+      "sources_with_nss_table_membership": 23
+    },
+    "gaia_nss_evidence": {
+      "provenance_file": "focused-nss-membership.provenance.json",
+      "purpose": "Expose exact Gaia DR3 non-single-star table membership for focused sources without inferring an NSS solution from another quality field."
     },
     "generator": "scripts/enrich_focused_catalog_kinematics.py"
   },

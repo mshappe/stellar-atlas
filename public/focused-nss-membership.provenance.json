@@ -1,0 +1,153 @@
+{
+  "purpose": "Gaia DR3 non-single-star table membership for focused catalog sources.",
+  "catalog": "Gaia DR3",
+  "tables": [
+    "gaiadr3.nss_acceleration_astro",
+    "gaiadr3.nss_non_linear_spectro",
+    "gaiadr3.nss_two_body_orbit",
+    "gaiadr3.nss_vim_fl"
+  ],
+  "selection": "Exact source_id membership in the queried Gaia DR3 NSS tables for the focused catalog audit.",
+  "records": [
+    {
+      "gaia_dr3_source_id": "334156706263100416",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "637329067477530368",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "1457486023639239296",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "1480314599451475712",
+      "tables": [
+        "gaiadr3.nss_non_linear_spectro"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "1594127865540229888",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "1610837178107032192",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "1712614124767394816",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "2074815898041643520",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "2133476355197071616",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit",
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "2367734656180397952",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "2603090003484152064",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "2837047214379099904",
+      "tables": [
+        "gaiadr3.nss_acceleration_astro"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "4062446910648807168",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "4164319171172759040",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "4745373133284418816",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "4963614887043956096",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "4976894960284258048",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "5300239064919282816",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit",
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "5514929155583865216",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "5855730584310531200",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "5925209583053212800",
+      "tables": [
+        "gaiadr3.nss_acceleration_astro"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "5957920668132624256",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    },
+    {
+      "gaia_dr3_source_id": "6421118739093252224",
+      "tables": [
+        "gaiadr3.nss_two_body_orbit"
+      ]
+    }
+  ]
+}

@@ -16,6 +16,7 @@ const row: GaiaRow = {
   ra: 0,
   dec: 0,
   parallax: 100,
+  astrometricParamsSolved: 31,
   raError: 0.1,
   decError: 0.2,
   parallaxError: 0.3,
@@ -55,12 +56,27 @@ describe('Gaia space motion', () => {
     expect(propagateGaiaPosition(incomplete, 5026)).toBeUndefined()
   })
 
+  it('requires Gaia’s five-parameter astrometric solution', () => {
+    const incomplete = { ...row, astrometricParamsSolved: 95 }
+    expect(hasMeasuredSixDimensionalState(incomplete)).toBe(false)
+    expect(propagateGaiaPosition(incomplete, 5026)).toBeUndefined()
+  })
+
   it('builds the published astrometric covariance matrix', () => {
     const covariance = astrometricCovariance(row)
     expect(covariance?.get(0, 0)).toBeCloseTo((0.1 / 3_600_000) ** 2)
     expect(covariance?.get(1, 1)).toBeCloseTo((0.2 / 3_600_000) ** 2)
     expect(covariance?.get(0, 1)).toBe(0)
     expect(covariance?.isSymmetric()).toBe(true)
+  })
+
+  it('converts Gaia alpha-star uncertainty to right ascension for the Cartesian Jacobian', () => {
+    const covariance = astrometricCovariance({
+      ...row,
+      dec: 60,
+    })
+
+    expect(covariance?.get(0, 0)).toBeCloseTo((0.1 / Math.cos(Math.PI / 3) / 3_600_000) ** 2)
   })
 
   it('rejects a non-positive-definite correlation matrix', () => {
