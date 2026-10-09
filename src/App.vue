@@ -41,6 +41,9 @@ const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
+const MINIMUM_PROJECTION_PROGRESS_MS = 300
+let projectionProgressStartedAt = 0
+let projectionProgressTimer: ReturnType<typeof setTimeout> | undefined
 let catalogLoadId = 0
 let labelCatalogLoadId = 0
 let candidateLoadId = 0
@@ -66,13 +69,22 @@ const projectedSourceCount = computed(() => projectionEpoch.value === undefined
 function setProjectionEpoch(epoch: number | undefined) {
   if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
   if (projectionEpoch.value === epoch) return
+  if (projectionProgressTimer !== undefined) {
+    clearTimeout(projectionProgressTimer)
+    projectionProgressTimer = undefined
+  }
   projectionEpoch.value = epoch
   projectionRendering.value = true
+  projectionProgressStartedAt = performance.now()
   atlas.clearRoute()
 }
 
 function finishProjectionRender() {
-  projectionRendering.value = false
+  const remaining = Math.max(0, MINIMUM_PROJECTION_PROGRESS_MS - (performance.now() - projectionProgressStartedAt))
+  projectionProgressTimer = setTimeout(() => {
+    projectionRendering.value = false
+    projectionProgressTimer = undefined
+  }, remaining)
 }
 
 onMounted(() => {
