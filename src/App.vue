@@ -34,11 +34,12 @@ const labelCandidates = ref<LabelCandidates>()
 const candidateError = ref('')
 const creationError = ref('')
 const isLoadingCandidates = ref(false)
-const isCreatingLabel = ref(false)
+const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 let catalogLoadId = 0
+let labelCatalogLoadId = 0
 let candidateLoadId = 0
 let curationRequestId = 0
 
@@ -53,6 +54,8 @@ const selectedGaiaSourceId = computed(() => {
 const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   ? atlas.state.permanentLabels.labelsBySourceId[selectedGaiaSourceId.value]
   : undefined)
+const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
+  && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
 
 onMounted(() => {
   void refreshLabelCatalog()
@@ -63,7 +66,6 @@ onMounted(() => {
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
   curationRequestId += 1
   creationError.value = ''
-  isCreatingLabel.value = false
   void refreshLabelCandidates()
 })
 
@@ -103,11 +105,15 @@ async function importCatalog(file: File) {
 }
 
 async function refreshLabelCatalog() {
+  const loadId = ++labelCatalogLoadId
   labelCatalogStatus.value = ''
   try {
-    atlas.setLabelCatalog(await loadPersistentLabelCatalog())
+    const catalog = await loadPersistentLabelCatalog()
+    if (loadId !== labelCatalogLoadId) return
+    atlas.setLabelCatalog(catalog)
     if (atlas.state.activeCatalog) updateCatalogStatus()
   } catch (error) {
+    if (loadId !== labelCatalogLoadId) return
     labelCatalogStatus.value = `Permanent labels are unavailable: ${error instanceof Error ? error.message : 'unknown error'}. Retry to restore them.`
   }
 }
@@ -148,11 +154,13 @@ function signInForCuration() {
 }
 
 async function createLabel(sourceId: string, displayLabel: string) {
+  if (creatingLabelSourceIds.value.has(sourceId)) return
   const requestId = ++curationRequestId
   creationError.value = ''
-  isCreatingLabel.value = true
+  creatingLabelSourceIds.value = new Set([...creatingLabelSourceIds.value, sourceId])
   try {
     const createdLabel = await createPersistentLabel(sourceId, displayLabel)
+    labelCatalogLoadId += 1
     atlas.setLabelCatalog(addPersistentLabel(atlas.state.permanentLabels, createdLabel))
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
@@ -162,7 +170,9 @@ async function createLabel(sourceId: string, displayLabel: string) {
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     creationError.value = `Permanent label could not be created: ${error instanceof Error ? error.message : 'unknown error'}.`
   } finally {
-    if (isCurrentCurationRequest(requestId, sourceId)) isCreatingLabel.value = false
+    creatingLabelSourceIds.value = new Set(
+      [...creatingLabelSourceIds.value].filter((creatingSourceId) => creatingSourceId !== sourceId),
+    )
   }
 }
 

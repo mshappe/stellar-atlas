@@ -249,4 +249,101 @@ describe('App label curation', () => {
     expect(panel.props('existingLabel')).toBe(`Gaia DR3 ${firstSource.sourceId}`)
     expect(panel.find('form').exists()).toBe(false)
   })
+
+  it('does not let an earlier catalog request overwrite a created label', async () => {
+    const initialCatalog = Promise.withResolvers<Response>()
+    let labelCatalogRequests = 0
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url === '/api/labels' && init?.method === 'POST') {
+        return Promise.resolve(Response.json({
+          label: {
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          },
+        }, { status: 201 }))
+      }
+      if (url === '/api/labels') {
+        labelCatalogRequests += 1
+        if (labelCatalogRequests === 1) return initialCatalog.promise
+        return Promise.resolve(Response.json({
+          labels: [{
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          }],
+        }))
+      }
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) return Promise.resolve(Response.json({
+        sourceId: firstSource.sourceId,
+        candidates: [{
+          displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          authority: 'Gaia DR3 source ID',
+        }],
+      }))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+    wrapper.findComponent({ name: 'LabelCurationPanel' }).vm.$emit('create', firstSource.sourceId, `Gaia DR3 ${firstSource.sourceId}`)
+    await flushPromises()
+    initialCatalog.resolve(Response.json({ labels: [] }))
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'AtlasScene' }).props('permanentLabels')).toEqual({
+      [firstSource.sourceId]: `Gaia DR3 ${firstSource.sourceId}`,
+    })
+  })
+
+  it('does not submit another write while the selected source is already creating a label', async () => {
+    const labelWrite = Promise.withResolvers<Response>()
+    const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url === '/api/labels' && init?.method === 'POST') return labelWrite.promise
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) return Promise.resolve(Response.json({
+        sourceId: firstSource.sourceId,
+        candidates: [{
+          displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          authority: 'Gaia DR3 source ID',
+        }],
+      }))
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+    const panel = wrapper.findComponent({ name: 'LabelCurationPanel' })
+    panel.vm.$emit('create', firstSource.sourceId, `Gaia DR3 ${firstSource.sourceId}`)
+    panel.vm.$emit('create', firstSource.sourceId, `Gaia DR3 ${firstSource.sourceId}`)
+    await flushPromises()
+
+    expect(fetchMock.mock.calls.filter(([input, init]) => (
+      String(input) === '/api/labels' && init?.method === 'POST'
+    ))).toHaveLength(1)
+    labelWrite.resolve(Response.json({
+      label: {
+        gaiaSourceId: firstSource.sourceId,
+        displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+      },
+    }, { status: 201 }))
+    await flushPromises()
+  })
 })
