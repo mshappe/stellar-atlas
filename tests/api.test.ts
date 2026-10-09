@@ -115,6 +115,28 @@ describe('API', () => {
     expect((await postLabel(baseUrl, { cookie: sessionCookie, origin: 'https://attacker.example' })).status).toBe(403)
   })
 
+  it('returns verified label candidates only to maintainers', async () => {
+    const { server } = startApiServer()
+    const baseUrl = await listen(server)
+    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-session-secret')
+
+    expect((await fetch(`${baseUrl}/api/labels/candidates?sourceId=${sourceId}`)).status).toBe(403)
+    expect((await fetch(`${baseUrl}/api/labels/candidates?sourceId=${sourceId}`, {
+      headers: { Cookie: `stellar_atlas_session=${nonMaintainer}` },
+    })).status).toBe(403)
+    expect((await fetch(`${baseUrl}/api/labels/candidates?sourceId=unknown`, {
+      headers: { Cookie: sessionCookie },
+    })).status).toBe(404)
+    const response = await fetch(`${baseUrl}/api/labels/candidates?sourceId=${sourceId}`, {
+      headers: { Cookie: sessionCookie },
+    })
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      sourceId,
+      candidates: [{ displayLabel: 'Verified Host', authority: 'NASA Exoplanet Archive hostname' }],
+    })
+  })
+
   it('accepts only server-verified candidates and reports duplicate labels', async () => {
     const { server, created } = startApiServer({
       labelStore: {

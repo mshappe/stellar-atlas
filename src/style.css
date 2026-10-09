@@ -157,6 +157,25 @@ code { color: #cee0ff; }
   color: #e8edf8;
 }
 
+.curation-form {
+  display: grid;
+  gap: .75rem;
+}
+.curation-form label {
+  display: grid;
+  gap: .4rem;
+  color: #bdc9db;
+  font-size: .85rem;
+}
+.curation-form select {
+  width: 100%;
+  padding: .55rem .6rem;
+  border: 1px solid #3f5e89;
+  border-radius: .4rem;
+  background: #0e2038;
+  color: #e8edf8;
+}
+
 .search-form {
   display: grid;
   gap: .4rem;
