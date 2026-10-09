@@ -9,6 +9,7 @@ defineProps<{
   projectionEpoch: number | undefined
   projectionAvailable: boolean
   projectedSourceCount: number | undefined
+  projectionRendering: boolean
 }>()
 
 const emit = defineEmits<{
@@ -73,6 +74,14 @@ function changeProjectionEpoch(event: Event) {
       class="status"
     >
       {{ projectedSourceCount?.toLocaleString() }} focused sources have measured 6D inputs and are rendered at the projected epoch. Their physical displacement may be visually small within the 300-ly field; select a source for exact coordinates and displacement.
+    </p>
+    <p
+      v-if="projectionRendering"
+      class="status"
+      role="status"
+      aria-live="polite"
+    >
+      Updating projected positions…
     </p>
     <label
       class="catalog-control"

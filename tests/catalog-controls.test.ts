@@ -14,6 +14,7 @@ describe('CatalogControls', () => {
         projectionEpoch: undefined,
         projectionAvailable: false,
         projectedSourceCount: undefined,
+        projectionRendering: false,
       },
     })
 
@@ -31,6 +32,7 @@ describe('CatalogControls', () => {
         projectionEpoch: 5026,
         projectionAvailable: true,
         projectedSourceCount: 886,
+        projectionRendering: false,
       },
     })
 
@@ -51,10 +53,28 @@ describe('CatalogControls', () => {
         projectionEpoch: undefined,
         projectionAvailable: false,
         projectedSourceCount: undefined,
+        projectionRendering: false,
       },
     })
 
     expect((wrapper.get('#projection-epoch').element as HTMLInputElement).disabled).toBe(true)
     expect(wrapper.text()).toContain('require the enriched focused catalog')
+  })
+
+  it('announces projected-position updates while rendering', () => {
+    const wrapper = mount(CatalogControls, {
+      props: {
+        selectedCatalogKey: 'confirmed-hosts',
+        hideUnlabeledStars: false,
+        importStatus: 'Ready.',
+        labelCatalogStatus: '',
+        projectionEpoch: 5026,
+        projectionAvailable: true,
+        projectedSourceCount: 987,
+        projectionRendering: true,
+      },
+    })
+
+    expect(wrapper.findAll('[role="status"]').some((status) => status.text().includes('Updating projected positions'))).toBe(true)
   })
 })

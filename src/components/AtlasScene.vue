@@ -24,6 +24,7 @@ const emit = defineEmits<{
   select: [object: AtlasObject]
   focus: [object: AtlasObject]
   popRoute: []
+  projectionRendered: []
 }>()
 
 const COLOR_STOPS: Array<[number, [number, number, number]]> = [
@@ -49,6 +50,7 @@ let routePath: SVGPolylineElement | undefined
 let routeMarkers: SVGGElement | undefined
 let resizeObserver: ResizeObserver | undefined
 let animationFrame: number | undefined
+let projectionRenderFrame: number | undefined
 let stars: THREE.Points | undefined
 let axes: THREE.AxesHelper | undefined
 let solMarker: THREE.Points | undefined
@@ -67,6 +69,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (animationFrame !== undefined) cancelAnimationFrame(animationFrame)
+  if (projectionRenderFrame !== undefined) cancelAnimationFrame(projectionRenderFrame)
   resizeObserver?.disconnect()
   clearRenderedCatalog()
   if (solMarker) {
@@ -80,7 +83,14 @@ onBeforeUnmount(() => {
 })
 
 watch([() => props.catalog, () => props.selectedOrigin], () => renderCatalog(true))
-watch(() => props.projectionEpoch, () => renderCatalog(false))
+watch(() => props.projectionEpoch, () => {
+  if (projectionRenderFrame !== undefined) cancelAnimationFrame(projectionRenderFrame)
+  projectionRenderFrame = requestAnimationFrame(() => {
+    projectionRenderFrame = undefined
+    renderCatalog(false)
+    emit('projectionRendered')
+  })
+})
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()

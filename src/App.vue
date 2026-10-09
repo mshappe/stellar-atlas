@@ -40,6 +40,7 @@ const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 const projectionEpoch = ref<number | undefined>()
+const projectionRendering = ref(false)
 let catalogLoadId = 0
 let labelCatalogLoadId = 0
 let candidateLoadId = 0
@@ -64,8 +65,14 @@ const projectedSourceCount = computed(() => projectionEpoch.value === undefined
 
 function setProjectionEpoch(epoch: number | undefined) {
   if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
+  if (projectionEpoch.value === epoch) return
   projectionEpoch.value = epoch
+  projectionRendering.value = true
   atlas.clearRoute()
+}
+
+function finishProjectionRender() {
+  projectionRendering.value = false
 }
 
 onMounted(() => {
@@ -458,6 +465,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :projection-epoch="projectionEpoch"
           :projection-available="atlas.state.activeFocusedCatalog"
           :projected-source-count="projectedSourceCount"
+          :projection-rendering="projectionRendering"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
@@ -489,6 +497,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @select="selectMapObject"
           @focus="focusMapObject"
           @pop-route="popRoute"
+          @projection-rendered="finishProjectionRender"
         />
         <p class="scene-hint">
           Drag to orbit · scroll to zoom · double-click a point for its Gaia values
