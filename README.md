@@ -9,6 +9,17 @@ npm install
 npm run dev
 ```
 
+`npm run dev` starts the Vite UI and API service together. Vite proxies `/api` to the API service, so browser requests retain the configured public origin. Set the required local values in `.env` before using the API; for development, `PUBLIC_ORIGIN` must match Vite's displayed URL (normally `http://localhost:5173`) while `PORT` remains the API listener port (normally `3000`).
+
+For production, build the Vue UI and serve it and the API from the same process:
+
+```sh
+npm run build
+npm run start
+```
+
+Configure the GitHub OAuth application's callback URL as `${PUBLIC_ORIGIN}/api/auth/github/callback`. Production `PUBLIC_ORIGIN` must use HTTPS because session and OAuth-state cookies are `Secure`.
+
 ## Application architecture
 
 The browser UI is a Vue 3 application. `src/App.vue` owns catalog loading, CSV validation, user-visible status, and the `useAtlasState` composable. The composable uses shallow reactive root state so the full Gaia catalog is retained as raw row data rather than recursively proxied.
@@ -30,9 +41,7 @@ This creates the untracked `data/label-source-index.sqlite` artifact. Its metada
 Run the project checks with:
 
 ```sh
-npm test
-npm run lint
-npm run build
+npm run check
 ```
 
 ## Bundled confirmed-exoplanet host prototype

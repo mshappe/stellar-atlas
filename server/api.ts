@@ -1,4 +1,6 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { createReadStream, promises as filesystem } from 'node:fs'
+import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { URL } from 'node:url'
 import { createOAuthState, createSignedSession, readSignedSession, verifyOAuthState } from './auth'
 import { LabelAlreadyExistsError, type LabelStore } from './label-store'
@@ -16,6 +18,7 @@ export type ApiConfig = {
   labelStore: LabelStore
   sourceIndex: SourceIndex
   fetchImplementation?: typeof fetch
+  staticDirectory?: string
 }
 
 export function createApiServer(config: ApiConfig) {
@@ -79,6 +82,7 @@ export function createApiServer(config: ApiConfig) {
           throw error
         }
       }
+      if (await serveStaticFile(request, response, url, config.staticDirectory)) return
       return sendJson(response, 404, { error: 'Not found.' })
     } catch (error) {
       if (error instanceof ApiRequestError) return sendJson(response, error.status, { error: error.message })
@@ -86,6 +90,80 @@ export function createApiServer(config: ApiConfig) {
       return sendJson(response, 500, { error: 'Unexpected server error.' })
     }
   })
+}
+
+async function serveStaticFile(
+  request: IncomingMessage,
+  response: ServerResponse,
+  url: URL,
+  staticDirectory: string | undefined,
+) {
+  if (!staticDirectory || (request.method !== 'GET' && request.method !== 'HEAD')) return false
+
+  let requestedPath: string
+  try {
+    requestedPath = decodeURIComponent(url.pathname)
+  } catch {
+    return false
+  }
+  const directory = resolve(staticDirectory)
+  const relativePath = requestedPath === '/' ? 'index.html' : requestedPath.slice(1)
+  let filePath = resolve(directory, relativePath)
+  if (!isPathInsideDirectory(directory, filePath)) return false
+
+  try {
+    const metadata = await filesystem.stat(filePath)
+    if (!metadata.isFile()) return false
+  } catch (error) {
+    if (!isNotFoundError(error) || !acceptsHtml(request)) return false
+    filePath = resolve(directory, 'index.html')
+  }
+
+  response.writeHead(200, {
+    'Content-Type': contentTypeFor(filePath),
+    'Cache-Control': relative(directory, filePath).startsWith('assets/')
+      ? 'public, max-age=31536000, immutable'
+      : 'no-store',
+  })
+  if (request.method === 'HEAD') {
+    response.end()
+    return true
+  }
+  await new Promise<void>((resolveStream, rejectStream) => {
+    const stream = createReadStream(filePath)
+    stream.once('error', rejectStream)
+    response.once('error', rejectStream)
+    response.once('finish', resolveStream)
+    stream.pipe(response)
+  })
+  return true
+}
+
+function isPathInsideDirectory(directory: string, filePath: string) {
+  const pathToFile = relative(directory, filePath)
+  return pathToFile === '' || (!pathToFile.startsWith('..') && !isAbsolute(pathToFile))
+}
+
+function isNotFoundError(error: unknown) {
+  return typeof error === 'object' && error !== null && 'code' in error
+    && (error.code === 'ENOENT' || error.code === 'ENOTDIR')
+}
+
+function acceptsHtml(request: IncomingMessage) {
+  return request.headers.accept?.includes('text/html') ?? false
+}
+
+function contentTypeFor(filePath: string) {
+  switch (extname(filePath)) {
+    case '.css': return 'text/css; charset=utf-8'
+    case '.csv': return 'text/csv; charset=utf-8'
+    case '.html': return 'text/html; charset=utf-8'
+    case '.js': return 'text/javascript; charset=utf-8'
+    case '.json': return 'application/json; charset=utf-8'
+    case '.svg': return 'image/svg+xml'
+    case '.woff2': return 'font/woff2'
+    default: return 'application/octet-stream'
+  }
 }
 
 async function exchangeGitHubLogin(code: string, config: ApiConfig, fetchImplementation: typeof fetch) {
