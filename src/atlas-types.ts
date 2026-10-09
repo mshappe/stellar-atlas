@@ -16,6 +16,25 @@ export type GaiaRow = {
   knownSystemDiameterAu?: number
   knownSystemDiameterLightSeconds?: number
   sourceCategory?: string
+  astrometricParamsSolved?: number
+  pmra?: number
+  pmraError?: number
+  pmdec?: number
+  pmdecError?: number
+  radialVelocity?: number
+  radialVelocityError?: number
+  ruwe?: number
+  duplicatedSource?: boolean
+  raDecCorrelation?: number
+  raParallaxCorrelation?: number
+  raPmraCorrelation?: number
+  raPmdecCorrelation?: number
+  decParallaxCorrelation?: number
+  decPmraCorrelation?: number
+  decPmdecCorrelation?: number
+  parallaxPmraCorrelation?: number
+  parallaxPmdecCorrelation?: number
+  pmraPmdecCorrelation?: number
 }
 
 export type ParsedCatalog = {
