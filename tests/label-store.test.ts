@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { openLabelStore, parseLabelSeeds } from '../server/label-store'
+import { LabelAlreadyExistsError, openLabelStore, parseLabelSeeds } from '../server/label-store'
 
 const temporaryDirectories: string[] = []
 
@@ -118,6 +118,29 @@ describe('label store', () => {
       eventType: 'seeded',
       occurredAt: '2026-10-08T00:00:00.000Z',
     }])
+    store.close()
+  })
+
+  it('creates a maintainer label and its immutable creation event together', () => {
+    const store = openLabelStore(temporaryDatabasePath(), [], () => '2026-10-08T00:00:00.000Z')
+    const label = {
+      gaiaSourceId: '1234567890123456789',
+      displayLabel: 'Gaia DR3 1234567890123456789',
+      evidence: { gaia_dr3_source_id: '1234567890123456789' },
+      createdBy: 'mshappe',
+    }
+
+    expect(store.createMaintainerLabel(label)).toMatchObject({
+      ...label,
+      origin: 'maintainer',
+      createdAt: '2026-10-08T00:00:00.000Z',
+    })
+    expect(store.listEvents()).toMatchObject([{
+      gaiaSourceId: label.gaiaSourceId,
+      eventType: 'created',
+      actorLogin: 'mshappe',
+    }])
+    expect(() => store.createMaintainerLabel(label)).toThrow(LabelAlreadyExistsError)
     store.close()
   })
 })
