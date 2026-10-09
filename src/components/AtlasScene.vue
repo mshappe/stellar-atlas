@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import { MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
+import { LIGHT_YEARS_PER_PARSEC, MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
 import { cartesianPosition, relativeCartesianPosition } from '../catalog'
 import { GAIA_REFERENCE_EPOCH, propagateGaiaPosition } from '../space-motion'
@@ -38,6 +38,7 @@ const COLOR_STOPS: Array<[number, [number, number, number]]> = [
 
 const sceneElement = ref<HTMLDivElement>()
 const motionTrailsVisible = ref(false)
+const fieldOfView = ref('')
 const catalogRows = computed(() => (props.catalog?.rows ?? []).filter((row) => (
   props.projectionEpoch === undefined || propagateGaiaPosition(row, props.projectionEpoch) !== undefined
 )))
@@ -193,11 +194,26 @@ function resizeRenderer() {
   renderer.setSize(width, height, false)
   labelRenderer.setSize(width, height)
   routeOverlay.setAttribute('viewBox', `0 0 ${width} ${height}`)
+  updateFieldOfView()
+}
+
+function updateFieldOfView() {
+  if (!camera || !controls) return
+  const distance = camera.position.distanceTo(controls.target)
+  const heightParsecs = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+  const widthParsecs = heightParsecs * camera.aspect
+  fieldOfView.value = `Field at orbit target: ${formatFieldDimension(widthParsecs)} × ${formatFieldDimension(heightParsecs)}`
+}
+
+function formatFieldDimension(parsecs: number) {
+  const lightYears = parsecs * LIGHT_YEARS_PER_PARSEC
+  return lightYears >= 100 ? `${lightYears.toFixed(0)} ly` : `${lightYears.toPrecision(3)} ly`
 }
 
 function render() {
   if (!scene || !camera || !renderer || !labelRenderer || !controls) return
   controls.update()
+  updateFieldOfView()
   fadeMotionTrails()
   renderer.render(scene, camera)
   updateRouteOverlay()
@@ -535,6 +551,9 @@ defineExpose({ focusObject: focusOnObject })
       class="motion-trail-status"
     >
       Cyan ghosts and lines show J2016.0 positions; they fade over two minutes.
+    </p>
+    <p class="field-of-view-status">
+      {{ fieldOfView }}
     </p>
   </div>
 </template>

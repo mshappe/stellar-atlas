@@ -257,6 +257,20 @@ dd { margin: 0; text-align: right; }
   font-size: 0.82rem;
   pointer-events: none;
 }
+.field-of-view-status {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 3;
+  margin: 0;
+  padding: 0.35rem 0.55rem;
+  border: 1px solid #3f5e89;
+  border-radius: 0.25rem;
+  background: rgb(7 16 29 / 88%);
+  color: #dbe9ff;
+  font-size: 0.78rem;
+  pointer-events: none;
+}
 .route-overlay { position: absolute; z-index: 2; inset: 0; pointer-events: none; }
 .route-path {
   fill: none;

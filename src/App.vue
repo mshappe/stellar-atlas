@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, MAXIMUM_PROJECTION_EPOCH, MINIMUM_PROJECTION_EPOCH, SOL } from './atlas-data'
+import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, MAX_DISTANCE_LIGHT_YEARS, MAXIMUM_PROJECTION_EPOCH, MINIMUM_PROJECTION_EPOCH, SOL } from './atlas-data'
 import type { AtlasObject, CatalogKey, GaiaRow } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
@@ -234,7 +234,7 @@ function updateCatalogStatus() {
     ? `${visibleRows.length.toLocaleString()} labeled ${scope} shown.`
     : `${visibleRows.length.toLocaleString()} ${scope} shown.`
   catalogState.value = visibleRows.length
-    ? `${visibleRows.length.toLocaleString()} ${atlas.state.activeFocusedCatalog ? 'focused stars' : 'Gaia DR3 sources'} · 300 ly`
+    ? `${visibleRows.length.toLocaleString()} ${atlas.state.activeFocusedCatalog ? 'focused stars' : 'Gaia DR3 sources'} · ${MAX_DISTANCE_LIGHT_YEARS} ly`
     : 'No labeled stars in this catalog'
 }
 
