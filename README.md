@@ -4,12 +4,30 @@ An interactive browser viewer for Gaia DR3 astrometry. The bundled prototype is 
 
 ## Run
 
+On a new machine, run the local bootstrap from the repository root:
+
 ```sh
-npm install
+npm run setup:local
+```
+
+It prompts for the GitHub OAuth client ID, client secret, and maintainer login; generates independent high-entropy signing and OAuth-state secrets; writes a mode-`0600` `.env`; installs exactly the locked Node dependencies with `npm ci`; and builds the ignored `data/label-source-index.sqlite` from the committed catalogs. It never overwrites an existing `.env`; use the documented configuration values below to repair one deliberately.
+
+Before the bootstrap, create a GitHub OAuth app in **GitHub Settings → Developer settings → OAuth Apps**. For the default local configuration, set:
+
+| GitHub OAuth app field | Value |
+| --- | --- |
+| Homepage URL | `http://localhost:5173` |
+| Authorization callback URL | `http://localhost:5173/api/auth/github/callback` |
+
+If you choose a different public origin during bootstrap, use that exact origin and `${PUBLIC_ORIGIN}/api/auth/github/callback` instead. The OAuth client credentials are external secrets: they must be supplied interactively or restored from the operator’s secret manager, never committed to this repository.
+
+After bootstrap succeeds:
+
+```sh
 npm run dev
 ```
 
-`npm run dev` starts the Vite UI and API service together. Vite proxies `/api` to the API service, so browser requests retain the configured public origin. Set the required local values in `.env` before using the API; generate independent high-entropy values for `SESSION_SIGNING_SECRET` and `OAUTH_STATE_SECRET`. For development, `PUBLIC_ORIGIN` must match Vite's displayed URL (normally `http://localhost:5173`) while `PORT` remains the API listener port (normally `3000`).
+`npm run dev` starts the Vite UI and API service together. Vite proxies `/api` to the API service, so browser requests retain the configured public origin. For development, `PUBLIC_ORIGIN` must match Vite's displayed URL (normally `http://localhost:5173`) while `PORT` remains the API listener port (normally `3000`).
 
 For production, build the Vue UI and serve it and the API from the same process:
 
@@ -19,6 +37,12 @@ npm run start
 ```
 
 Configure the GitHub OAuth application's callback URL as `${PUBLIC_ORIGIN}/api/auth/github/callback`. Production `PUBLIC_ORIGIN` must use HTTPS because session and OAuth-state cookies are `Secure`.
+
+To reconstruct ignored local artifacts later, rerun `npm run setup:local` if `.env` is absent, or regenerate only the source index with:
+
+```sh
+python3 scripts/build_label_source_index.py
+```
 
 ## Application architecture
 
@@ -82,7 +106,7 @@ This is the diameter of the largest **known planetary orbit** by apoastron, not 
 
 ## Point-to-point distances
 
-Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance in light-years, light-megaseconds, and parsecs; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same ICRS Cartesian coordinates rendered by the map: Gaia RA, Dec, and the geometric reciprocal-parallax display distance at J2016.0 for Gaia sources, and Sol's JPL Horizons barycentric J2016.0 position. This is not an uncertainty-aware separation estimate and is not propagated to a common modern epoch.
+Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance in light-years, light-megaseconds, and parsecs; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same Cartesian positions rendered by the map: J2016.0 Gaia reciprocal-parallax coordinates and Sol's JPL Horizons state in the default view, or the selected common projected epoch in projected mode. This is not an uncertainty-aware separation estimate.
 
 ## Complete Gaia comparison layer
 
@@ -117,9 +141,17 @@ The viewer rejects non-finite or non-positive parallaxes. The reciprocal-paralla
 
 The focused confirmed-host/reference catalog supports a bounded projected epoch from **J5026.0 through J5526.0**. J2016.0 remains the default catalog view. Projected positions use Gaia DR3 position, parallax, proper motion, and radial velocity in a straight-line, constant-velocity inertial model; this is a kinematic projection, not a many-body stellar ephemeris.
 
-Only sources with all measured 6D inputs required by the projection are rendered in projected mode. A source with absent radial velocity or another required measurement is excluded rather than assigned an assumed value. When Gaia DR3 omits a radial velocity or its uncertainty, the focused catalog may use a cited SIMBAD measurement matched by its exact Gaia DR3 identifier; `public/focused-radial-velocity-supplements.provenance.json` retains the source ID, SIMBAD quality code, and bibliography code for each such measurement. Sol is propagated from its separately documented JPL Horizons barycentric ICRF position and velocity state at J2016.0.
+Only sources with Gaia’s five-parameter astrometric solution (`astrometric_params_solved = 31`) and all measured 6D inputs required by the projection are rendered in projected mode. A source with absent radial velocity or another required measurement is excluded rather than assigned an assumed value. When Gaia DR3 omits a radial velocity or its uncertainty, the focused catalog may use a cited SIMBAD measurement matched by its exact Gaia DR3 identifier; `public/focused-radial-velocity-supplements.provenance.json` retains the source ID, SIMBAD quality code, and bibliography code for each such measurement. Sol is propagated from its separately documented JPL Horizons barycentric ICRF position and velocity state at J2016.0.
 
 For a projected Gaia source with a valid published five-parameter astrometric covariance, the selected-source panel reports a root-sum-square (RSS) Cartesian coordinate uncertainty. It is calculated as `sqrt(trace(C))` after propagating that covariance and the reported radial-velocity variance through the local Cartesian projection Jacobian. It is not a confidence radius or a three-dimensional 1σ containment region. Exact Gaia non-single-star table membership, duplicated-source status, and RUWE remain source evidence and are displayed rather than used to silently alter the result. The displayed uncertainty does not account for unrecognized multiplicity, future encounters, or departures from constant velocity.
+
+[`public/focused-nss-membership.provenance.json`](public/focused-nss-membership.provenance.json) records the Gaia TAP endpoint, retrieval time, input-catalog SHA-256, exact ADQL requests, and exact source-ID memberships used for the NSS evidence. Regenerate it from the current focused catalog with:
+
+```sh
+python3 scripts/query_focused_nss_membership.py \
+  public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv \
+  public/focused-nss-membership.provenance.json
+```
 
 ## Sources
 

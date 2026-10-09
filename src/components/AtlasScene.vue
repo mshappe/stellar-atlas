@@ -493,9 +493,10 @@ function catalogEpochPosition(object: AtlasObject) {
 }
 
 function positionFromRow(row: GaiaRow) {
-  return new THREE.Vector3(...(props.projectionEpoch === undefined
-    ? cartesianPosition(row)
-    : propagateGaiaPosition(row, props.projectionEpoch) ?? cartesianPosition(row)))
+  if (props.projectionEpoch === undefined) return new THREE.Vector3(...cartesianPosition(row))
+  const projected = propagateGaiaPosition(row, props.projectionEpoch)
+  if (!projected) throw new Error(`Gaia DR3 ${row.sourceId} lacks the measured 6D state required for projected rendering.`)
+  return new THREE.Vector3(...projected)
 }
 
 function isNonGaiaStar(object: AtlasObject): object is typeof SOL {

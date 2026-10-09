@@ -30,14 +30,23 @@ const catalogCsv = [
   `${trappist.sourceId},${trappist.ra},${trappist.dec},${trappist.parallax}`,
   `${firstSource.sourceId},${firstSource.ra},${firstSource.dec},${firstSource.parallax}`,
   `${secondSource.sourceId},${secondSource.ra},${secondSource.dec},${secondSource.parallax}`,
+  ...Array.from({ length: 997 }, (_, index) => `${index + 10_000_000_000_000_000},3,0,100`),
 ].join('\n')
 
 function mountApp() {
   return mount(App, {
     global: {
       stubs: {
-        AtlasScene: { name: 'AtlasScene', props: ['permanentLabels'], template: '<div />' },
-        CatalogControls: true,
+        AtlasScene: {
+          name: 'AtlasScene',
+          props: ['permanentLabels', 'projectionEpoch'],
+          template: '<div />',
+        },
+        CatalogControls: {
+          name: 'CatalogControls',
+          props: ['selectedCatalogKey', 'importStatus', 'projectionEpoch'],
+          template: '<div />',
+        },
         CatalogSearch: true,
         ReferenceFramePanel: true,
         RoutePanel: true,
@@ -52,6 +61,84 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('retains the active catalog selection when a replacement catalog cannot load', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes('gaia-dr3-trappist-1-300ly.csv')) return Promise.resolve(new Response('', { status: 503 }))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    const controls = wrapper.findComponent({ name: 'CatalogControls' })
+    expect(controls.props('selectedCatalogKey')).toBe('confirmed-hosts')
+    controls.vm.$emit('changeProjectionEpoch', 5026)
+    await flushPromises()
+    controls.vm.$emit('changeCatalog', 'all-stars')
+    await flushPromises()
+
+    expect(controls.props('selectedCatalogKey')).toBe('confirmed-hosts')
+    expect(controls.props('importStatus')).toContain('could not be loaded')
+    expect(controls.props('projectionEpoch')).toBe(5026)
+  })
+
+  it('rejects out-of-range projection epochs at the application state boundary', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    const controls = wrapper.findComponent({ name: 'CatalogControls' })
+    controls.vm.$emit('changeProjectionEpoch', 5025)
+    await flushPromises()
+    expect(controls.props('projectionEpoch')).toBeUndefined()
+
+    controls.vm.$emit('changeProjectionEpoch', 5527)
+    await flushPromises()
+    expect(controls.props('projectionEpoch')).toBeUndefined()
+  })
+
+  it('clears a selected source that projected rendering excludes', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    const scene = wrapper.findComponent({ name: 'AtlasScene' })
+    scene.vm.$emit('focus', firstSource)
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'LabelCurationPanel' }).props('sourceId')).toBe(firstSource.sourceId)
+
+    wrapper.findComponent({ name: 'CatalogControls' }).vm.$emit('changeProjectionEpoch', 5026)
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'LabelCurationPanel' }).props('sourceId')).toBeUndefined()
+  })
+
   it('does not overwrite a newly selected source with a prior label-write completion', async () => {
     const labelWrite = Promise.withResolvers<Response>()
     let labelCreated = false

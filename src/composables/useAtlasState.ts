@@ -57,6 +57,8 @@ export function useAtlasState() {
     state.selectedOrigin = origin
     state.activeCatalog = filteredCatalog
     state.activeFocusedCatalog = focusedCatalog
+    state.selectedObject = undefined
+    state.measurementEndpoints = []
     clearSearch()
   }
 
@@ -86,6 +88,10 @@ export function useAtlasState() {
   function locateObject(object: AtlasObject) {
     collapseSearchMatchLabels(object)
     state.selectedObject = object
+  }
+
+  function clearSelectedObject() {
+    state.selectedObject = undefined
   }
 
   function selectMapObject(object: AtlasObject) {
@@ -139,6 +145,7 @@ export function useAtlasState() {
     runSearch,
     clearSearch,
     locateObject,
+    clearSelectedObject,
     selectMapObject,
     popRouteEndpoint,
     clearRoute,

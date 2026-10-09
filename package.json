@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "concurrently --kill-others-on-fail \"vite\" \"npm run serve:api\"",
+    "setup:local": "python3 scripts/bootstrap_local.py",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "npm run serve:api",
     "start": "npm run serve:api",

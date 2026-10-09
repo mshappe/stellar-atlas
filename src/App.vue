@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, SOL } from './atlas-data'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, MAXIMUM_PROJECTION_EPOCH, MINIMUM_PROJECTION_EPOCH, SOL } from './atlas-data'
 import type { AtlasObject, CatalogKey, GaiaRow } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
@@ -38,7 +38,7 @@ const isLoadingCandidates = ref(false)
 const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
-const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
+const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
 const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
@@ -68,6 +68,7 @@ const projectedSourceCount = computed(() => projectionEpoch.value === undefined
 
 function setProjectionEpoch(epoch: number | undefined) {
   if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
+  if (epoch !== undefined && (!Number.isFinite(epoch) || epoch < MINIMUM_PROJECTION_EPOCH || epoch > MAXIMUM_PROJECTION_EPOCH)) return
   if (projectionEpoch.value === epoch) return
   const enteringProjectedMode = projectionEpoch.value === undefined && epoch !== undefined
   if (projectionProgressTimer !== undefined) {
@@ -77,7 +78,12 @@ function setProjectionEpoch(epoch: number | undefined) {
   projectionEpoch.value = epoch
   projectionRendering.value = true
   projectionProgressStartedAt = performance.now()
-  if (enteringProjectedMode) resetSearch()
+  if (enteringProjectedMode) {
+    resetSearch()
+    if (atlas.state.selectedObject && isGaiaRow(atlas.state.selectedObject) && !hasMeasuredSixDimensionalState(atlas.state.selectedObject)) {
+      atlas.clearSelectedObject()
+    }
+  }
   atlas.clearRoute()
 }
 
@@ -95,6 +101,10 @@ onMounted(() => {
   void loadBundledCatalog('confirmed-hosts')
 })
 
+onBeforeUnmount(() => {
+  if (projectionProgressTimer !== undefined) clearTimeout(projectionProgressTimer)
+})
+
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
   curationRequestId += 1
   creationError.value = ''
@@ -104,7 +114,6 @@ watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
 async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const definition = BUNDLED_CATALOGS[catalogKey]
   const loadId = ++catalogLoadId
-  selectedBundledCatalogKey.value = catalogKey
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
@@ -112,12 +121,13 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
     const parsed = parseGaiaCsv(await response.text())
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(parsed, definition.focusedCatalog, definition.count)
+    selectedBundledCatalogKey.value = catalogKey
     if (!definition.focusedCatalog) setProjectionEpoch(undefined)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
     if (loadId !== catalogLoadId) return
-    catalogState.value = 'Catalog unavailable'
+    if (!atlas.state.activeCatalog) catalogState.value = 'Catalog unavailable'
     importStatus.value = `The bundled Gaia DR3 volume could not be loaded: ${error instanceof Error ? error.message : 'unknown error'}.`
   }
 }

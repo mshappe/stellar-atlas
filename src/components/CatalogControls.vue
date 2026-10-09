@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MAXIMUM_PROJECTION_EPOCH, MINIMUM_PROJECTION_EPOCH } from '../atlas-data'
 import type { CatalogKey } from '../atlas-types'
 
 defineProps<{
@@ -92,8 +93,8 @@ function changeProjectionEpoch(event: Event) {
       <input
         id="projection-epoch"
         type="range"
-        min="5026"
-        max="5526"
+        :min="MINIMUM_PROJECTION_EPOCH"
+        :max="MAXIMUM_PROJECTION_EPOCH"
         step="1"
         :value="projectionEpoch"
         :disabled="!projectionAvailable"
@@ -105,9 +106,9 @@ function changeProjectionEpoch(event: Event) {
       class="measure-clear"
       type="button"
       :disabled="!projectionAvailable"
-      @click="emit('changeProjectionEpoch', 5026)"
+      @click="emit('changeProjectionEpoch', MINIMUM_PROJECTION_EPOCH)"
     >
-      Enable future projection from J5026.0
+      Enable future projection from J{{ MINIMUM_PROJECTION_EPOCH.toFixed(1) }}
     </button>
     <p
       v-if="!projectionAvailable"
