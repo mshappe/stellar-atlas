@@ -241,7 +241,11 @@ function searchCatalog(query: string) {
     searchStatus.value = 'The active catalog is still loading.'
     return
   }
-  const results = atlas.runSearch(query)
+  const results = atlas.runSearch(query, (object) => (
+    isNonGaiaStar(object)
+    || projectionEpoch.value === undefined
+    || hasMeasuredSixDimensionalState(object)
+  ))
   searchResults.value = results.map((object) => ({
     object,
     name: sourceDisplayName(object),
@@ -350,6 +354,8 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
+  if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
+  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
     fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])
@@ -370,8 +376,6 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
       fields.push(['Projected 1σ Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
     }
-    if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
-    if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
   }
   return fields
 }

@@ -51,7 +51,7 @@ def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
         for record in json.loads(SUPPLEMENT_PATH.read_text(encoding="utf-8"))["records"]
     }
     nss_membership = {
-        record["gaia_dr3_source_id"]: "; ".join(record["tables"])
+        record["gaia_dr3_source_id"]: "; ".join(dict.fromkeys(record["tables"]))
         for record in json.loads(NSS_MEMBERSHIP_PATH.read_text(encoding="utf-8"))["records"]
     }
     with kinematics_path.open(newline="", encoding="utf-8") as source:

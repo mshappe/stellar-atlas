@@ -60,7 +60,6 @@
     {
       "gaia_dr3_source_id": "2133476355197071616",
       "tables": [
-        "gaiadr3.nss_two_body_orbit",
         "gaiadr3.nss_two_body_orbit"
       ]
     },
@@ -115,7 +114,6 @@
     {
       "gaia_dr3_source_id": "5300239064919282816",
       "tables": [
-        "gaiadr3.nss_two_body_orbit",
         "gaiadr3.nss_two_body_orbit"
       ]
     },

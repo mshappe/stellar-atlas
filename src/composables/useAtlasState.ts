@@ -64,10 +64,10 @@ export function useAtlasState() {
     state.hideUnlabeledStars = !state.hideUnlabeledStars
   }
 
-  function runSearch(query: string) {
+  function runSearch(query: string, isVisible: (object: GaiaRow) => boolean = () => true) {
     const normalizedQuery = query.trim().toLowerCase()
     const rows = state.activeCatalog
-      ? searchCatalogRows(state.activeCatalog.rows, query, state.permanentLabels.labelsBySourceId, state.knownCatalogIdentifiers)
+      ? searchCatalogRows(state.activeCatalog.rows, query, state.permanentLabels.labelsBySourceId, state.knownCatalogIdentifiers).filter(isVisible)
       : []
     state.matchedSearchSourceIds = new Set(rows.map((row) => row.sourceId))
     state.alternativeLabelIds = new Set([...state.matchedSearchSourceIds]

@@ -31,7 +31,7 @@ describe('CatalogControls', () => {
         labelCatalogStatus: '',
         projectionEpoch: 5026,
         projectionAvailable: true,
-        projectedSourceCount: 886,
+        projectedSourceCount: 911,
         projectionRendering: false,
       },
     })
@@ -89,7 +89,7 @@ describe('CatalogControls', () => {
         labelCatalogStatus: '',
         projectionEpoch: 5026,
         projectionAvailable: true,
-        projectedSourceCount: 987,
+        projectedSourceCount: 911,
         projectionRendering: true,
       },
     })

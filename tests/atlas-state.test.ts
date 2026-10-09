@@ -73,6 +73,15 @@ describe('useAtlasState', () => {
     expect(atlas.displayedLabelIds()).toContain('2635476908753563008')
   })
 
+  it('does not expose filtered search matches as temporary labels', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+    atlas.activateCatalog(catalog, true)
+
+    expect(atlas.runSearch('1069', () => false)).toEqual([])
+    expect(atlas.state.alternativeLabelIds).toEqual(new Set())
+  })
+
   it('distinguishes locating a result from map selection for route state', () => {
     const atlas = useAtlasState()
     atlas.setLabelCatalog(permanentLabels)
