@@ -54,9 +54,11 @@
       "sources_with_supplemental_radial_velocity_and_error": 26,
       "sources_with_any_cited_radial_velocity_and_error": 538,
       "sources_with_five_parameter_astrometric_solution": 496,
-      "sources_with_baseline_6d_inputs": 538,
+      "sources_with_gaia_rv_projectable_6d_inputs": 476,
+      "sources_with_projectable_6d_inputs": 490,
       "sources_with_duplicated_source_flag": 29,
-      "sources_with_ruwe_above_1_4": 58
+      "sources_with_ruwe_above_1_4": 58,
+      "sources_with_nss_table_membership": 16
     },
     "generator": "scripts/enrich_focused_catalog_kinematics.py"
   },
@@ -116,5 +118,9 @@
     "The reported diameter is the known planetary-orbit extent only. It excludes stellar companions, debris disks, and planets without the required reported elements.",
     "This is a reciprocal-parallax display selection, not a probabilistic distance-selected census.",
     "No debris-belt-only systems are included without a separately citable detection catalog and unambiguous Gaia DR3 match."
-  ]
+  ],
+  "gaia_nss_evidence": {
+    "provenance_file": "focused-nss-membership.provenance.json",
+    "purpose": "Expose exact Gaia DR3 non-single-star table membership for focused sources without inferring an NSS solution from another quality field."
+  }
 }
