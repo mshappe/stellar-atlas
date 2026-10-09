@@ -105,7 +105,6 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const definition = BUNDLED_CATALOGS[catalogKey]
   const loadId = ++catalogLoadId
   selectedBundledCatalogKey.value = catalogKey
-  if (!definition.focusedCatalog) setProjectionEpoch(undefined)
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
@@ -113,6 +112,7 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
     const parsed = parseGaiaCsv(await response.text())
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(parsed, definition.focusedCatalog, definition.count)
+    if (!definition.focusedCatalog) setProjectionEpoch(undefined)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {

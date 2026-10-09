@@ -101,8 +101,12 @@ watch(() => props.projectionEpoch, () => {
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()
+  renderMotionTrails(visibleCatalogRows())
 })
-watch(() => props.hideUnlabeledStars, setPointVisibility)
+watch(() => props.hideUnlabeledStars, () => {
+  setPointVisibility()
+  renderMotionTrails(visibleCatalogRows())
+})
 
 function initializeScene(container: HTMLDivElement) {
   scene = new THREE.Scene()
@@ -257,7 +261,7 @@ function renderCatalog(resetCamera = true) {
   renderStarLabels()
   setPointVisibility()
   updateSolRenderPosition()
-  renderMotionTrails(rows)
+  renderMotionTrails(visibleCatalogRows())
 
   if (resetCamera) {
     const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
@@ -323,6 +327,12 @@ function renderMotionTrails(rows: GaiaRow[]) {
   scene.add(motionGhosts)
   motionTrailStartedAt = performance.now()
   motionTrailsVisible.value = true
+}
+
+function visibleCatalogRows() {
+  return props.hideUnlabeledStars
+    ? catalogRows.value.filter((row) => props.labelIds.has(row.sourceId))
+    : catalogRows.value
 }
 
 function fadeMotionTrails() {
