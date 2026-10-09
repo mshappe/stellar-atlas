@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
+import { readFileSync } from 'node:fs'
 import type { GaiaRow } from '../src/atlas-types'
 import { cartesianPosition } from '../src/catalog'
+import { parseGaiaCsv } from '../src/gaia-csv'
 import {
   astrometricCovariance,
   GAIA_REFERENCE_EPOCH,
@@ -55,8 +57,8 @@ describe('Gaia space motion', () => {
 
   it('builds the published astrometric covariance matrix', () => {
     const covariance = astrometricCovariance(row)
-    expect(covariance?.get(0, 0)).toBeCloseTo(0.01)
-    expect(covariance?.get(1, 1)).toBeCloseTo(0.04)
+    expect(covariance?.get(0, 0)).toBeCloseTo((0.1 / 3_600_000) ** 2)
+    expect(covariance?.get(1, 1)).toBeCloseTo((0.2 / 3_600_000) ** 2)
     expect(covariance?.get(0, 1)).toBe(0)
     expect(covariance?.isSymmetric()).toBe(true)
   })
@@ -72,5 +74,12 @@ describe('Gaia space motion', () => {
     const uncertainty = projectedPositionUncertaintyParsecs(row, 5026)
     expect(uncertainty).toBeGreaterThan(0)
     expect(Number.isFinite(uncertainty)).toBe(true)
+  })
+
+  it('propagates a finite uncertainty for a committed focused-catalog source', () => {
+    const catalog = parseGaiaCsv(readFileSync(new URL('../public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv', import.meta.url), 'utf8'))
+    const source = catalog.rows.find((candidate) => hasMeasuredSixDimensionalState(candidate))
+    expect(source).toBeDefined()
+    expect(Number.isFinite(projectedPositionUncertaintyParsecs(source!, 5026))).toBe(true)
   })
 })

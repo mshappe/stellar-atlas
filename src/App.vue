@@ -291,9 +291,9 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     return [
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRS X (pc)', String(x)],
-      ['Barycentric ICRS Y (pc)', String(y)],
-      ['Barycentric ICRS Z (pc)', String(z)],
+      ['Barycentric ICRF X (pc)', String(x)],
+      ['Barycentric ICRF Y (pc)', String(y)],
+      ['Barycentric ICRF Z (pc)', String(z)],
       ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
     ]
   }
@@ -480,7 +480,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       </div>
     </section>
     <footer>
-      <span>TRAPPIST-1 is the origin · axes: ICRS Cartesian X, Y, Z · units: parsecs</span>
+      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: parsecs</span>
       <a
         href="https://exoplanetarchive.ipac.caltech.edu/"
         target="_blank"

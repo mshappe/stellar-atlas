@@ -6,6 +6,7 @@ import { cartesianPosition } from './catalog'
 export const GAIA_REFERENCE_EPOCH = 2016.0
 const KILOMETRES_PER_SECOND_TO_PARSEC_PER_JULIAN_YEAR = 31_557_600 / 3.085_677_581_491_367e13
 const TANGENTIAL_VELOCITY_FACTOR = 4.740_470_446
+const MILLIARCSECONDS_PER_DEGREE = 3_600_000
 
 export function hasMeasuredSixDimensionalState(row: GaiaRow) {
   return [
@@ -58,7 +59,7 @@ export function astrometricCovariance(row: GaiaRow): Matrix | undefined {
     || decParallaxCorrelation === undefined || decPmraCorrelation === undefined || decPmdecCorrelation === undefined
     || parallaxPmraCorrelation === undefined || parallaxPmdecCorrelation === undefined || pmraPmdecCorrelation === undefined
   ) return undefined
-  const errors = [raError, decError, parallaxError, pmraError, pmdecError]
+  const errors = [raError / MILLIARCSECONDS_PER_DEGREE, decError / MILLIARCSECONDS_PER_DEGREE, parallaxError, pmraError, pmdecError]
   const correlations = [
     raDecCorrelation, raParallaxCorrelation, raPmraCorrelation, raPmdecCorrelation,
     decParallaxCorrelation, decPmraCorrelation, decPmdecCorrelation,

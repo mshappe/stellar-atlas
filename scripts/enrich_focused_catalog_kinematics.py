@@ -8,6 +8,8 @@ from pathlib import Path
 
 KINEMATIC_COLUMNS = (
     "astrometric_params_solved",
+    "ra_error",
+    "dec_error",
     "pmra",
     "pmra_error",
     "pmdec",
@@ -43,13 +45,16 @@ def main(catalog_path: Path, kinematics_path: Path, output_path: Path) -> None:
     if missing:
         raise SystemExit(f"Gaia kinematics are missing for {len(missing)} focused source IDs.")
 
-    fieldnames = [*reader.fieldnames, *KINEMATIC_COLUMNS]
+    fieldnames = [
+        *(fieldname for fieldname in reader.fieldnames if fieldname not in KINEMATIC_COLUMNS),
+        *KINEMATIC_COLUMNS,
+    ]
     with output_path.open("w", newline="", encoding="utf-8") as destination:
         writer = csv.DictWriter(destination, fieldnames=fieldnames)
         writer.writeheader()
         for row in rows:
             writer.writerow({
-                **row,
+                **{fieldname: row[fieldname] for fieldname in fieldnames if fieldname not in KINEMATIC_COLUMNS},
                 **{column: kinematics[row["source_id"]][column] for column in KINEMATIC_COLUMNS},
             })
 

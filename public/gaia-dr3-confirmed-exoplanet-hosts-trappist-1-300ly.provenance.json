@@ -22,6 +22,8 @@
     "adql_columns": [
       "source_id",
       "astrometric_params_solved",
+      "ra_error",
+      "dec_error",
       "pmra",
       "pmra_error",
       "pmdec",
