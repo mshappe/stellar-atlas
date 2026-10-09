@@ -37,6 +37,7 @@ const COLOR_STOPS: Array<[number, [number, number, number]]> = [
 ]
 
 const sceneElement = ref<HTMLDivElement>()
+const motionTrailsVisible = ref(false)
 const catalogRows = computed(() => (props.catalog?.rows ?? []).filter((row) => (
   props.projectionEpoch === undefined || propagateGaiaPosition(row, props.projectionEpoch) !== undefined
 )))
@@ -54,6 +55,8 @@ let projectionRenderFrame: number | undefined
 let stars: THREE.Points | undefined
 let motionTrails: THREE.LineSegments | undefined
 let motionTrailMaterial: THREE.LineBasicMaterial | undefined
+let motionGhosts: THREE.Points | undefined
+let motionGhostMaterial: THREE.PointsMaterial | undefined
 let motionTrailStartedAt: number | undefined
 let axes: THREE.AxesHelper | undefined
 let solMarker: THREE.Points | undefined
@@ -282,6 +285,7 @@ function renderMotionTrails(rows: GaiaRow[]) {
   if (props.projectionEpoch === undefined || props.projectionEpoch === GAIA_REFERENCE_EPOCH || !scene) return
   const originAtCatalogEpoch = catalogEpochPosition(props.selectedOrigin)
   const positions = new Float32Array(rows.length * 6)
+  const ghostPositions = new Float32Array(rows.length * 3)
   rows.forEach((row, index) => {
     const catalogEpochPosition = relativeCartesianPosition(cartesianPosition(row), originAtCatalogEpoch)
     const projectedPosition = relativePosition(row)
@@ -289,18 +293,36 @@ function renderMotionTrails(rows: GaiaRow[]) {
       catalogEpochPosition[0], catalogEpochPosition[1], catalogEpochPosition[2],
       projectedPosition.x, projectedPosition.y, projectedPosition.z,
     ], index * 6)
+    ghostPositions.set(catalogEpochPosition, index * 3)
   })
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
   motionTrailMaterial = new THREE.LineBasicMaterial({
     color: '#8bdcff',
     transparent: true,
-    opacity: 0.65,
+    opacity: 0.9,
     depthWrite: false,
+    depthTest: false,
   })
   motionTrails = new THREE.LineSegments(geometry, motionTrailMaterial)
+  motionTrails.renderOrder = 1
   scene.add(motionTrails)
+  const ghostGeometry = new THREE.BufferGeometry()
+  ghostGeometry.setAttribute('position', new THREE.BufferAttribute(ghostPositions, 3))
+  motionGhostMaterial = new THREE.PointsMaterial({
+    color: '#8bdcff',
+    size: 7,
+    sizeAttenuation: false,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    depthTest: false,
+  })
+  motionGhosts = new THREE.Points(ghostGeometry, motionGhostMaterial)
+  motionGhosts.renderOrder = 2
+  scene.add(motionGhosts)
   motionTrailStartedAt = performance.now()
+  motionTrailsVisible.value = true
 }
 
 function fadeMotionTrails() {
@@ -310,7 +332,8 @@ function fadeMotionTrails() {
     clearMotionTrails()
     return
   }
-  motionTrailMaterial.opacity = 0.65 * remaining
+  motionTrailMaterial.opacity = 0.9 * remaining
+  if (motionGhostMaterial) motionGhostMaterial.opacity = 0.9 * remaining
 }
 
 function clearMotionTrails() {
@@ -318,9 +341,17 @@ function clearMotionTrails() {
   scene.remove(motionTrails)
   motionTrails.geometry.dispose()
   motionTrailMaterial?.dispose()
+  if (motionGhosts) {
+    scene.remove(motionGhosts)
+    motionGhosts.geometry.dispose()
+  }
+  motionGhostMaterial?.dispose()
   motionTrails = undefined
   motionTrailMaterial = undefined
+  motionGhosts = undefined
+  motionGhostMaterial = undefined
   motionTrailStartedAt = undefined
+  motionTrailsVisible.value = false
 }
 
 function renderStarLabels() {
@@ -487,5 +518,12 @@ defineExpose({ focusObject: focusOnObject })
     ref="sceneElement"
     class="atlas-scene"
     aria-label="Interactive three-dimensional stellar field"
-  />
+  >
+    <p
+      v-if="motionTrailsVisible"
+      class="motion-trail-status"
+    >
+      Cyan ghosts and lines show J2016.0 positions; they fade over two minutes.
+    </p>
+  </div>
 </template>
