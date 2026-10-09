@@ -21,6 +21,7 @@ import {
 } from './label-api'
 import { addPersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
+import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, propagateGaiaPosition } from './space-motion'
 
 const atlas = useAtlasState()
 const scene = ref<InstanceType<typeof AtlasScene>>()
@@ -38,6 +39,7 @@ const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
+const projectionEpoch = ref<number | undefined>()
 let catalogLoadId = 0
 let labelCatalogLoadId = 0
 let candidateLoadId = 0
@@ -56,6 +58,11 @@ const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
+
+function setProjectionEpoch(epoch: number | undefined) {
+  projectionEpoch.value = epoch
+  atlas.clearRoute()
+}
 
 onMounted(() => {
   void refreshLabelCatalog()
@@ -312,6 +319,13 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', object.knownSystemDiameterAu.toPrecision(8)])
   if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
+  if (projectionEpoch.value !== undefined) {
+    fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
+    fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? 'Measured Gaia proper motion and radial velocity available' : 'Unavailable: this source is excluded from projected rendering'])
+    if (hasMeasuredSixDimensionalState(object)) fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
+    if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
+    if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
+  }
   return fields
 }
 
@@ -346,7 +360,16 @@ function routeDisplay(endpoints: AtlasObject[]) {
 }
 
 function positionForObject(object: AtlasObject): [number, number, number] {
-  if (isNonGaiaStar(object)) return object.position
+  if (isNonGaiaStar(object)) {
+    if (projectionEpoch.value === undefined) return object.position
+    const elapsedYears = projectionEpoch.value - GAIA_REFERENCE_EPOCH
+    return object.position.map((value, index) => value + object.velocity[index] * elapsedYears) as [number, number, number]
+  }
+  if (projectionEpoch.value !== undefined) {
+    const projected = propagateGaiaPosition(object, projectionEpoch.value)
+    if (!projected) throw new Error(`Gaia DR3 ${object.sourceId} lacks the measured 6D state required for projected routes.`)
+    return [...projected]
+  }
   return cartesianPosition(object)
 }
 
@@ -410,10 +433,12 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
           :import-status="importStatus"
           :label-catalog-status="labelCatalogStatus"
+          :projection-epoch="projectionEpoch"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
           @retry-labels="refreshLabelCatalog"
+          @change-projection-epoch="setProjectionEpoch"
         />
         <CatalogSearch
           :key="searchResetId"
@@ -435,6 +460,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :alternative-label-ids="atlas.state.alternativeLabelIds"
           :permanent-labels="atlas.state.permanentLabels.labelsBySourceId"
           :route-endpoints="atlas.state.measurementEndpoints"
+          :projection-epoch="projectionEpoch"
           :display-name="sourceDisplayName"
           @select="selectMapObject"
           @focus="focusMapObject"

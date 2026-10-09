@@ -6,6 +6,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
 import { cartesianPosition, relativeCartesianPosition } from '../catalog'
+import { GAIA_REFERENCE_EPOCH, propagateGaiaPosition } from '../space-motion'
 
 const props = defineProps<{
   catalog?: ParsedCatalog
@@ -16,6 +17,7 @@ const props = defineProps<{
   permanentLabels: Readonly<Record<string, string>>
   routeEndpoints: AtlasObject[]
   displayName: (object: AtlasObject) => string
+  projectionEpoch?: number
 }>()
 
 const emit = defineEmits<{
@@ -34,7 +36,9 @@ const COLOR_STOPS: Array<[number, [number, number, number]]> = [
 ]
 
 const sceneElement = ref<HTMLDivElement>()
-const catalogRows = computed(() => props.catalog?.rows ?? [])
+const catalogRows = computed(() => (props.catalog?.rows ?? []).filter((row) => (
+  props.projectionEpoch === undefined || propagateGaiaPosition(row, props.projectionEpoch) !== undefined
+)))
 let scene: THREE.Scene | undefined
 let camera: THREE.PerspectiveCamera | undefined
 let renderer: THREE.WebGLRenderer | undefined
@@ -75,7 +79,7 @@ onBeforeUnmount(() => {
   routeOverlay?.remove()
 })
 
-watch([() => props.catalog, () => props.selectedOrigin], renderCatalog)
+watch([() => props.catalog, () => props.selectedOrigin, () => props.projectionEpoch], renderCatalog)
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()
@@ -370,11 +374,17 @@ function relativePosition(object: AtlasObject) {
 }
 
 function positionFromObject(object: AtlasObject) {
-  return isNonGaiaStar(object) ? new THREE.Vector3(...object.position) : positionFromRow(object)
+  if (isNonGaiaStar(object)) {
+    const elapsedYears = props.projectionEpoch === undefined ? 0 : props.projectionEpoch - GAIA_REFERENCE_EPOCH
+    return new THREE.Vector3(...object.position.map((value, index) => value + object.velocity[index] * elapsedYears))
+  }
+  return positionFromRow(object)
 }
 
 function positionFromRow(row: GaiaRow) {
-  return new THREE.Vector3(...cartesianPosition(row))
+  return new THREE.Vector3(...(props.projectionEpoch === undefined
+    ? cartesianPosition(row)
+    : propagateGaiaPosition(row, props.projectionEpoch) ?? cartesianPosition(row)))
 }
 
 function isNonGaiaStar(object: AtlasObject): object is typeof SOL {

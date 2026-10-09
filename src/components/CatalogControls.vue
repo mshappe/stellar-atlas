@@ -6,6 +6,7 @@ defineProps<{
   hideUnlabeledStars: boolean
   importStatus: string
   labelCatalogStatus: string
+  projectionEpoch: number | undefined
 }>()
 
 const emit = defineEmits<{
@@ -13,6 +14,7 @@ const emit = defineEmits<{
   toggleLabels: []
   importFile: [file: File]
   retryLabels: []
+  changeProjectionEpoch: [epoch: number | undefined]
 }>()
 
 function importCatalog(event: Event) {
@@ -25,6 +27,11 @@ function importCatalog(event: Event) {
 function changeCatalog(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   if (value === 'confirmed-hosts' || value === 'all-stars') emit('changeCatalog', value)
+}
+
+function changeProjectionEpoch(event: Event) {
+  const value = Number((event.target as HTMLInputElement).value)
+  emit('changeProjectionEpoch', Number.isFinite(value) ? value : undefined)
 }
 </script>
 
@@ -58,6 +65,29 @@ function changeCatalog(event: Event) {
       @click="emit('toggleLabels')"
     >
       {{ hideUnlabeledStars ? 'Show unlabeled stars' : 'Hide unlabeled stars' }}
+    </button>
+    <label
+      class="catalog-control"
+      for="projection-epoch"
+    >
+      <span>Projected epoch: {{ projectionEpoch ?? 'J2016.0 (catalog epoch)' }}</span>
+      <input
+        id="projection-epoch"
+        type="range"
+        min="5026"
+        max="5526"
+        step="1"
+        :value="projectionEpoch ?? 5026"
+        @input="changeProjectionEpoch"
+      >
+    </label>
+    <button
+      v-if="projectionEpoch !== undefined"
+      class="measure-clear"
+      type="button"
+      @click="emit('changeProjectionEpoch', undefined)"
+    >
+      Return to J2016.0
     </button>
     <label
       class="upload-control"

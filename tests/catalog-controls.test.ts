@@ -11,10 +11,29 @@ describe('CatalogControls', () => {
         hideUnlabeledStars: false,
         importStatus: 'Ready.',
         labelCatalogStatus: '',
+        projectionEpoch: undefined,
       },
     })
 
     expect((wrapper.get('#catalog-mode').element as HTMLSelectElement).value).toBe('')
     expect(wrapper.text()).toContain('Imported Gaia DR3 CSV')
+  })
+
+  it('emits bounded projected epochs and explicitly restores the catalog epoch', async () => {
+    const wrapper = mount(CatalogControls, {
+      props: {
+        selectedCatalogKey: 'confirmed-hosts',
+        hideUnlabeledStars: false,
+        importStatus: 'Ready.',
+        labelCatalogStatus: '',
+        projectionEpoch: 5026,
+      },
+    })
+
+    await wrapper.get('#projection-epoch').setValue(5526)
+    expect(wrapper.emitted('changeProjectionEpoch')).toContainEqual([5526])
+
+    await wrapper.get('button.measure-clear').trigger('click')
+    expect(wrapper.emitted('changeProjectionEpoch')).toContainEqual([undefined])
   })
 })
