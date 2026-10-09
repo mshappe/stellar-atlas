@@ -1,7 +1,7 @@
 {
   "purpose": "Gaia DR3 astrometric positions for confirmed exoplanet host stars and explicitly documented named reference stars in an exact 150-light-year geometric volume around TRAPPIST-1.",
   "output_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv",
-  "output_row_count": 1000,
+  "output_row_count": 545,
   "gaia": {
     "catalog": "Gaia DR3",
     "table": "gaiadr3.gaia_source",

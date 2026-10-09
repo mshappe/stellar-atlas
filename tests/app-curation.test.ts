@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { BUNDLED_CATALOGS } from '../src/atlas-data'
 import type { GaiaRow } from '../src/atlas-types'
 import App from '../src/App.vue'
 
@@ -30,7 +31,10 @@ const catalogCsv = [
   `${trappist.sourceId},${trappist.ra},${trappist.dec},${trappist.parallax}`,
   `${firstSource.sourceId},${firstSource.ra},${firstSource.dec},${firstSource.parallax}`,
   `${secondSource.sourceId},${secondSource.ra},${secondSource.dec},${secondSource.parallax}`,
-  ...Array.from({ length: 997 }, (_, index) => `${index + 10_000_000_000_000_000},3,0,100`),
+  ...Array.from(
+    { length: BUNDLED_CATALOGS['confirmed-hosts'].count - 3 },
+    (_, index) => `${index + 10_000_000_000_000_000},3,0,100`,
+  ),
 ].join('\n')
 
 function mountApp() {

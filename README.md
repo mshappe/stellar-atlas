@@ -149,7 +149,7 @@ For a projected Gaia source with a valid published five-parameter astrometric co
 
 ```sh
 python3 scripts/query_focused_nss_membership.py \
-  public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv \
+  public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv \
   public/focused-nss-membership.provenance.json
 ```
 
