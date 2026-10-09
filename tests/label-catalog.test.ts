@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseLabelCatalog } from '../src/label-catalog'
+import { parseLabelCatalog, parsePersistentLabelCatalog } from '../src/label-catalog'
 
 describe('parseLabelCatalog', () => {
   it('extracts permanent labels from provenance records', () => {
@@ -16,6 +16,18 @@ describe('parseLabelCatalog', () => {
       '2635476908753563008': 'TRAPPIST-1',
     })
     expect(catalog.sourceIds).toEqual(new Set(['2635476908753563008']))
+  })
+
+  it('extracts persistent labels from the API response', () => {
+    expect(parsePersistentLabelCatalog({
+      labels: [{
+        gaiaSourceId: '2635476908753563008',
+        displayLabel: 'TRAPPIST-1',
+        origin: 'seed',
+      }],
+    }).labelsBySourceId).toEqual({
+      '2635476908753563008': 'TRAPPIST-1',
+    })
   })
 
   it.each([

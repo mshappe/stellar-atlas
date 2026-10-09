@@ -13,6 +13,11 @@ type LabelDefinition = {
   display_label: string
 }
 
+type PersistentLabelDefinition = {
+  gaiaSourceId: string
+  displayLabel: string
+}
+
 export function parseLabelCatalog(value: unknown): LabelCatalog {
   if (!isRecord(value) || !Array.isArray(value.labels)) {
     throw new Error('The prominent-star label catalog must contain a labels array.')
@@ -41,16 +46,35 @@ export function parseLabelCatalog(value: unknown): LabelCatalog {
   }
 }
 
-export async function loadLabelCatalog(baseUrl: string): Promise<LabelCatalog> {
-  const response = await fetch(`${baseUrl}prominent-star-labels.provenance.json`)
-  if (!response.ok) throw new Error(`The prominent-star label catalog could not be loaded (HTTP ${response.status}).`)
-  return parseLabelCatalog(await response.json())
+export function parsePersistentLabelCatalog(value: unknown): LabelCatalog {
+  if (!isRecord(value) || !Array.isArray(value.labels)) {
+    throw new Error('The persistent label API response must contain a labels array.')
+  }
+  return catalogFromDefinitions(value.labels.map((definition, index) => {
+    if (!isPersistentLabelDefinition(definition)) {
+      throw new Error(`Persistent label record ${index + 1} must contain a Gaia DR3 source ID and display label.`)
+    }
+    return {
+      gaia_dr3_source_id: definition.gaiaSourceId,
+      display_label: definition.displayLabel,
+    }
+  }))
 }
 
 function isLabelDefinition(value: unknown): value is LabelDefinition {
   return isRecord(value)
     && typeof value.gaia_dr3_source_id === 'string'
     && typeof value.display_label === 'string'
+}
+
+function isPersistentLabelDefinition(value: unknown): value is PersistentLabelDefinition {
+  return isRecord(value)
+    && typeof value.gaiaSourceId === 'string'
+    && typeof value.displayLabel === 'string'
+}
+
+function catalogFromDefinitions(definitions: unknown[]): LabelCatalog {
+  return parseLabelCatalog({ labels: definitions })
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -1,16 +1,24 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, SOL } from './atlas-data'
 import type { AtlasObject, CatalogKey, GaiaRow } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
 import CatalogSearch from './components/CatalogSearch.vue'
+import LabelCurationPanel from './components/LabelCurationPanel.vue'
 import ReferenceFramePanel from './components/ReferenceFramePanel.vue'
 import RoutePanel from './components/RoutePanel.vue'
 import SelectionPanel from './components/SelectionPanel.vue'
 import { useAtlasState } from './composables/useAtlasState'
 import { cartesianDistance, cartesianPosition, formatDisplayName, routeDistanceFromPositions } from './catalog'
-import { loadLabelCatalog } from './label-catalog'
+import {
+  createPersistentLabel,
+  loadAtlasSession,
+  loadLabelCandidates,
+  loadPersistentLabelCatalog,
+  type AtlasSession,
+  type LabelCandidates,
+} from './label-api'
 import { parseGaiaCsv } from './gaia-csv'
 
 const atlas = useAtlasState()
@@ -19,19 +27,36 @@ const importStatus = ref('Loading focused stars…')
 const catalogState = ref('Loading focused stars…')
 const searchStatus = ref('Searches Gaia DR3 IDs, NASA host and planet identifiers, and configured labels.')
 const labelCatalogStatus = ref('')
+const session = ref<AtlasSession>()
+const sessionStatus = ref('')
+const labelCandidates = ref<LabelCandidates>()
+const curationStatus = ref('')
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 let catalogLoadId = 0
+let candidateLoadId = 0
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
 const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
 const route = computed(() => routeDisplay(atlas.state.measurementEndpoints))
 const labelIds = computed(() => atlas.displayedLabelIds())
+const selectedGaiaSourceId = computed(() => {
+  const object = atlas.state.selectedObject
+  return object && !isNonGaiaStar(object) ? object.sourceId : undefined
+})
+const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
+  ? atlas.state.permanentLabels.labelsBySourceId[selectedGaiaSourceId.value]
+  : undefined)
 
 onMounted(() => {
   void refreshLabelCatalog()
+  void refreshSession()
   void loadBundledCatalog('confirmed-hosts')
+})
+
+watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
+  void refreshLabelCandidates()
 })
 
 async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
@@ -72,10 +97,51 @@ async function importCatalog(file: File) {
 async function refreshLabelCatalog() {
   labelCatalogStatus.value = ''
   try {
-    atlas.setLabelCatalog(await loadLabelCatalog(import.meta.env.BASE_URL))
+    atlas.setLabelCatalog(await loadPersistentLabelCatalog())
     if (atlas.state.activeCatalog) updateCatalogStatus()
   } catch (error) {
     labelCatalogStatus.value = `Permanent labels are unavailable: ${error instanceof Error ? error.message : 'unknown error'}. Retry to restore them.`
+  }
+}
+
+async function refreshSession() {
+  sessionStatus.value = ''
+  try {
+    session.value = await loadAtlasSession()
+  } catch (error) {
+    sessionStatus.value = `Maintainer session is unavailable: ${error instanceof Error ? error.message : 'unknown error'}.`
+  }
+}
+
+async function refreshLabelCandidates() {
+  const sourceId = selectedGaiaSourceId.value
+  const loadId = ++candidateLoadId
+  labelCandidates.value = undefined
+  curationStatus.value = ''
+  if (!sourceId || !session.value?.maintainer || selectedPermanentLabel.value) return
+  try {
+    const candidates = await loadLabelCandidates(sourceId)
+    if (loadId !== candidateLoadId || selectedGaiaSourceId.value !== sourceId) return
+    labelCandidates.value = candidates
+  } catch (error) {
+    if (loadId !== candidateLoadId) return
+    curationStatus.value = `Verified label candidates are unavailable: ${error instanceof Error ? error.message : 'unknown error'}.`
+  }
+}
+
+function signInForCuration() {
+  window.location.assign('/api/auth/github')
+}
+
+async function createLabel(sourceId: string, displayLabel: string) {
+  curationStatus.value = 'Creating permanent label…'
+  try {
+    await createPersistentLabel(sourceId, displayLabel)
+    await refreshLabelCatalog()
+    if (selectedGaiaSourceId.value === sourceId) await refreshLabelCandidates()
+    curationStatus.value = `Permanent label created: ${displayLabel}.`
+  } catch (error) {
+    curationStatus.value = `Permanent label could not be created: ${error instanceof Error ? error.message : 'unknown error'}.`
   }
 }
 
@@ -284,6 +350,15 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
         <SelectionPanel
           :name="selectedName"
           :fields="selectedFields"
+        />
+        <LabelCurationPanel
+          :session="session"
+          :source-id="selectedGaiaSourceId"
+          :existing-label="selectedPermanentLabel"
+          :candidates="labelCandidates"
+          :status="sessionStatus || curationStatus"
+          @sign-in="signInForCuration"
+          @create="createLabel"
         />
         <RoutePanel
           v-bind="route"

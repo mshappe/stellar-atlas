@@ -38,6 +38,16 @@ export function createApiServer(config: ApiConfig) {
           login: session?.login,
         })
       }
+      if (request.method === 'GET' && url.pathname === '/api/labels/candidates') {
+        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSigningSecret)
+        if (!session || !config.maintainers.has(session.login)) {
+          return sendJson(response, 403, { error: 'Maintainer authentication is required.' })
+        }
+        const sourceId = url.searchParams.get('sourceId')
+        const source = sourceId ? config.sourceIndex.findLabelCandidates(sourceId) : undefined
+        if (!source) return sendJson(response, 404, { error: 'No verified label candidates exist for this Gaia DR3 source.' })
+        return sendJson(response, 200, source)
+      }
       if (request.method === 'GET' && url.pathname === '/api/auth/github') {
         const state = createCallbackState(config.oauthStateSecret)
         setCookie(response, STATE_COOKIE, state.token, 10 * 60)
