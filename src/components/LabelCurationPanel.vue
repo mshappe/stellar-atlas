@@ -47,6 +47,9 @@ function createLabel(event: Event) {
     </p>
     <template v-else-if="!sourceId">
       <p class="status">
+        Signed in as {{ session.login }}.
+      </p>
+      <p class="status">
         Select a Gaia DR3 source to review its verified label candidates.
       </p>
     </template>
@@ -54,9 +57,12 @@ function createLabel(event: Event) {
       v-else-if="existingLabel"
       class="status"
     >
-      This source is already permanently labeled as {{ existingLabel }}.
+      Signed in as {{ session.login }}. This source is already permanently labeled as {{ existingLabel }}.
     </p>
     <template v-else>
+      <p class="status">
+        Signed in as {{ session.login }}.
+      </p>
       <p
         v-if="status"
         class="status"

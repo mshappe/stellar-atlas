@@ -54,6 +54,7 @@ describe('LabelCurationPanel', () => {
     })
 
     expect(wrapper.text()).toContain('already permanently labeled as Verified Host')
+    expect(wrapper.text()).toContain('Signed in as mshappe.')
     expect(wrapper.find('form').exists()).toBe(false)
   })
 })

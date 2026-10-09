@@ -140,7 +140,6 @@ async function createLabel(sourceId: string, displayLabel: string) {
   curationStatus.value = 'Creating permanent label…'
   try {
     await createPersistentLabel(sourceId, displayLabel)
-    if (!isCurrentCurationRequest(requestId, sourceId)) return
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     await refreshLabelCandidates()

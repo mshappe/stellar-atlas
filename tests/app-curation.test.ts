@@ -39,10 +39,18 @@ afterEach(() => {
 describe('App label curation', () => {
   it('does not overwrite a newly selected source with a prior label-write completion', async () => {
     const labelWrite = Promise.withResolvers<Response>()
+    let labelCreated = false
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request, init?: RequestInit) => {
       const url = String(input)
       if (url === '/api/labels' && init?.method === 'POST') return labelWrite.promise
-      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/labels') {
+        return Promise.resolve(Response.json({
+          labels: labelCreated ? [{
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+          }] : [],
+        }))
+      }
       if (url === '/api/session') return Promise.resolve(Response.json({
         authenticated: true,
         maintainer: true,
@@ -73,7 +81,7 @@ describe('App label curation', () => {
     const wrapper = mount(App, {
       global: {
         stubs: {
-          AtlasScene: { name: 'AtlasScene', template: '<div />' },
+          AtlasScene: { name: 'AtlasScene', props: ['permanentLabels'], template: '<div />' },
           CatalogControls: true,
           CatalogSearch: true,
           ReferenceFramePanel: true,
@@ -92,6 +100,7 @@ describe('App label curation', () => {
 
     scene.vm.$emit('focus', secondSource)
     await flushPromises()
+    labelCreated = true
     labelWrite.resolve(Response.json({ label: {} }))
     await flushPromises()
 
@@ -99,5 +108,8 @@ describe('App label curation', () => {
     expect(panel.props('sourceId')).toBe(secondSource.sourceId)
     expect(panel.props('status')).toBe('')
     expect(panel.text()).toContain(`Gaia DR3 ${secondSource.sourceId}`)
+    expect(scene.props('permanentLabels')).toEqual({
+      [firstSource.sourceId]: `Gaia DR3 ${firstSource.sourceId}`,
+    })
   })
 })
