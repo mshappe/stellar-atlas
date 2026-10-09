@@ -3,8 +3,9 @@ import type { BundledCatalogDefinition, CatalogKey, NonGaiaStar } from './atlas-
 export const SOL: NonGaiaStar = {
   sourceId: 'sol',
   name: 'Sol',
-  position: [1.812038087014733e-8, 6.814301406306658e-9, -7.81411830683232e-10],
-  coordinateBasis: 'JPL Horizons barycentric ICRS position at J2016.0',
+  position: [1.812038087014733e-8, 6.562827081439886e-9, 1.9936420953229955e-9],
+  velocity: [1.5168618133833458e-9, 1.1225114704903383e-8, 4.813011644925665e-9],
+  coordinateBasis: 'JPL Horizons barycentric ICRF state at J2016.0',
 }
 
 export const LIGHT_YEARS_PER_PARSEC = 3.2615637771674333

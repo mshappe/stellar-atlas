@@ -28,7 +28,8 @@ export type NonGaiaStar = {
   sourceId: 'sol'
   name: 'Sol'
   position: [number, number, number]
-  coordinateBasis: 'JPL Horizons barycentric ICRS position at J2016.0'
+  velocity: [number, number, number]
+  coordinateBasis: 'JPL Horizons barycentric ICRF state at J2016.0'
 }
 
 export type AtlasObject = GaiaRow | NonGaiaStar
