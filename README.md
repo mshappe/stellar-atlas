@@ -44,6 +44,8 @@ Run the project checks with:
 npm run check
 ```
 
+`npm run check` includes CodeQL CLI 2.27.2 with the same JavaScript/TypeScript bundle used in CI. On first use on Linux x64, it downloads the official bundle into `~/.cache/stellar-atlas/codeql`, verifies GitHub's published SHA-256 digest, and fails when CodeQL produces any alert.
+
 ## Bundled confirmed-exoplanet host prototype
 
 `public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv` contains 1,000 Gaia DR3 stars: 999 are joined by `gaia_dr3_id` to at least one record in the NASA Exoplanet Archive's Planetary Systems Composite Parameters (`PSCompPars`) table, which contains confirmed planets and published default parameter sets; Unukalhai is one explicitly marked named reference star. The selected-source panel identifies each row's catalog category and reports host/planet details only where they are present.

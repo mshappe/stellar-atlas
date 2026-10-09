@@ -11,8 +11,9 @@
     "serve:api": "node --env-file-if-exists=.env --import tsx server/main.ts",
     "test": "vitest run",
     "lint": "eslint .",
+    "codeql": "node scripts/run-codeql.mjs",
     "review:api-security": "node scripts/review-api-security.mjs",
-    "check": "npm test && npm run lint && npm run build && npm run review:api-security"
+    "check": "npm test && npm run lint && npm run build && npm run review:api-security && npm run codeql"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -27,7 +28,6 @@
     "jsdom": "^29.1.1",
     "tsx": "^4.23.15",
     "typescript": "~6.0.2",
-    "tsx": "^4.20.6",
     "typescript-eslint": "^8.71.1",
     "vite": "^8.3.0",
     "vitest": "^5.0.3",
