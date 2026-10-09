@@ -111,7 +111,15 @@ z = d_pc sin(dec)
 
 The displayed coordinate is then translated by subtracting the selected origin’s stored ICRS-barycentric position. The initial origin is TRAPPIST-1, but all stars—including Sol—retain their own stored positions and move when that setting changes.
 
-The viewer rejects non-finite or non-positive parallaxes. The reciprocal-parallax value is used only to place a point in this geometric view. It is **not** a Bayesian or otherwise uncertainty-aware distance estimate. `parallax_error` is retained and displayed for selected sources so that interpretation does not hide its precision. Proper-motion and radial-velocity propagation are intentionally not implemented yet; the displayed epoch remains the Gaia DR3 catalog epoch rather than claiming a current ephemeris.
+The viewer rejects non-finite or non-positive parallaxes. The reciprocal-parallax value is used only to place a point in this geometric view. It is **not** a Bayesian or otherwise uncertainty-aware distance estimate. `parallax_error` is retained and displayed for selected sources so that interpretation does not hide its precision. The default displayed epoch remains the Gaia DR3 catalog epoch; projected mode is separately constrained and documented below.
+
+## Projected epoch mode
+
+The focused confirmed-host/reference catalog supports a bounded projected epoch from **J5026.0 through J5526.0**. J2016.0 remains the default catalog view. Projected positions use Gaia DR3 position, parallax, proper motion, and radial velocity in a straight-line, constant-velocity inertial model; this is a kinematic projection, not a many-body stellar ephemeris.
+
+Only sources with all measured 6D inputs required by the projection are rendered in projected mode. A source with absent radial velocity or another required measurement is excluded rather than assigned an assumed value. Sol is propagated from its separately documented JPL Horizons barycentric ICRF position and velocity state at J2016.0.
+
+For a projected Gaia source with a valid published five-parameter astrometric covariance, the selected-source panel reports a 1σ Cartesian positional uncertainty. It is calculated by propagating that covariance and the reported radial-velocity variance through the local Cartesian projection Jacobian. Gaia non-single-star membership, duplicated-source status, and RUWE remain source evidence and are displayed rather than used to silently alter the result. The displayed uncertainty does not account for unrecognized multiplicity, future encounters, or departures from constant velocity.
 
 ## Sources
 
