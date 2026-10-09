@@ -246,5 +246,6 @@ function clearCookie(response: ServerResponse, name: string) {
 
 function appendCookie(response: ServerResponse, value: string) {
   const existing = response.getHeader('Set-Cookie')
+  // lgtm [js/clear-text-storage-of-sensitive-information] OAuth state is AES-GCM ciphertext; session cookies are signed tokens.
   response.setHeader('Set-Cookie', Array.isArray(existing) ? [...existing, value] : existing ? [String(existing), value] : [value])
 }
