@@ -39,20 +39,26 @@ def build_index(all_sources_path: Path, focused_sources_path: Path, output_path:
 
             with focused_sources_path.open(newline="", encoding="utf-8") as source:
                 reader = csv.DictReader(source)
-                rows = (
-                    (row["source_id"], row["host_names"].strip() or None)
-                    for row in reader
-                )
-                connection.executemany(
-                    """
-                    INSERT INTO catalog_sources (gaia_source_id, host_names)
-                    VALUES (?, ?)
-                    ON CONFLICT(gaia_source_id) DO UPDATE
-                    SET host_names = excluded.host_names
-                    WHERE excluded.host_names IS NOT NULL
-                    """,
-                    rows,
-                )
+                missing_source_ids = []
+                for row in reader:
+                    source_id = row["source_id"]
+                    host_names = row["host_names"].strip() or None
+                    result = connection.execute(
+                        """
+                        UPDATE catalog_sources
+                        SET host_names = COALESCE(?, host_names)
+                        WHERE gaia_source_id = ?
+                        """,
+                        (host_names, source_id),
+                    )
+                    if result.rowcount != 1:
+                        missing_source_ids.append(source_id)
+                if missing_source_ids:
+                    preview = ", ".join(missing_source_ids[:10])
+                    raise ValueError(
+                        f"{len(missing_source_ids)} focused Gaia source IDs are absent from "
+                        f"the all-source catalog: {preview}"
+                    )
 
             metadata = {
                 "all_sources_filename": all_sources_path.name,
