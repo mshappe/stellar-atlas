@@ -69,6 +69,7 @@ const projectedSourceCount = computed(() => projectionEpoch.value === undefined
 function setProjectionEpoch(epoch: number | undefined) {
   if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
   if (projectionEpoch.value === epoch) return
+  const enteringProjectedMode = projectionEpoch.value === undefined && epoch !== undefined
   if (projectionProgressTimer !== undefined) {
     clearTimeout(projectionProgressTimer)
     projectionProgressTimer = undefined
@@ -76,6 +77,7 @@ function setProjectionEpoch(epoch: number | undefined) {
   projectionEpoch.value = epoch
   projectionRendering.value = true
   projectionProgressStartedAt = performance.now()
+  if (enteringProjectedMode) resetSearch()
   atlas.clearRoute()
 }
 
@@ -374,7 +376,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
       fields.push(['J2016.0 to projected displacement (AU)', displacementAu.toPrecision(8)])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
-      fields.push(['Projected 1σ Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
+      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
     }
   }
   return fields

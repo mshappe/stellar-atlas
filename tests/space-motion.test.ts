@@ -86,7 +86,7 @@ describe('Gaia space motion', () => {
     })).toBeUndefined()
   })
 
-  it('propagates measured input uncertainty to a finite Cartesian 1σ value', () => {
+  it('propagates measured input uncertainty to a finite Cartesian RSS value', () => {
     const uncertainty = projectedPositionUncertaintyParsecs(row, 5026)
     expect(uncertainty).toBeGreaterThan(0)
     expect(Number.isFinite(uncertainty)).toBe(true)
