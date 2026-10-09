@@ -36,6 +36,7 @@ const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
 let catalogLoadId = 0
 let candidateLoadId = 0
+let curationRequestId = 0
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
 const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
@@ -56,6 +57,7 @@ onMounted(() => {
 })
 
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
+  curationRequestId += 1
   void refreshLabelCandidates()
 })
 
@@ -134,15 +136,24 @@ function signInForCuration() {
 }
 
 async function createLabel(sourceId: string, displayLabel: string) {
+  const requestId = ++curationRequestId
   curationStatus.value = 'Creating permanent label…'
   try {
     await createPersistentLabel(sourceId, displayLabel)
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
     await refreshLabelCatalog()
-    if (selectedGaiaSourceId.value === sourceId) await refreshLabelCandidates()
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
+    await refreshLabelCandidates()
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
     curationStatus.value = `Permanent label created: ${displayLabel}.`
   } catch (error) {
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
     curationStatus.value = `Permanent label could not be created: ${error instanceof Error ? error.message : 'unknown error'}.`
   }
+}
+
+function isCurrentCurationRequest(requestId: number, sourceId: string) {
+  return requestId === curationRequestId && selectedGaiaSourceId.value === sourceId
 }
 
 function updateCatalogStatus() {
