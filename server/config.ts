@@ -3,7 +3,8 @@ import { resolve } from 'node:path'
 export type ServerConfig = {
   port: number
   publicOrigin: string
-  sessionSecret: string
+  sessionSigningSecret: string
+  oauthStateSecret: string
   githubClientId: string
   githubClientSecret: string
   maintainers: Set<string>
@@ -26,7 +27,8 @@ export function loadServerConfig(environment = process.env): ServerConfig {
   return {
     port,
     publicOrigin,
-    sessionSecret: required('SESSION_SECRET'),
+    sessionSigningSecret: required('SESSION_SIGNING_SECRET'),
+    oauthStateSecret: required('OAUTH_STATE_SECRET'),
     githubClientId: required('GITHUB_CLIENT_ID'),
     githubClientSecret: required('GITHUB_CLIENT_SECRET'),
     maintainers,

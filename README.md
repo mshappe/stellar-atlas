@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-`npm run dev` starts the Vite UI and API service together. Vite proxies `/api` to the API service, so browser requests retain the configured public origin. Set the required local values in `.env` before using the API; for development, `PUBLIC_ORIGIN` must match Vite's displayed URL (normally `http://localhost:5173`) while `PORT` remains the API listener port (normally `3000`).
+`npm run dev` starts the Vite UI and API service together. Vite proxies `/api` to the API service, so browser requests retain the configured public origin. Set the required local values in `.env` before using the API; generate independent high-entropy values for `SESSION_SIGNING_SECRET` and `OAUTH_STATE_SECRET`. For development, `PUBLIC_ORIGIN` must match Vite's displayed URL (normally `http://localhost:5173`) while `PORT` remains the API listener port (normally `3000`).
 
 For production, build the Vue UI and serve it and the API from the same process:
 

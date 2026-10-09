@@ -7,11 +7,12 @@ import { LabelAlreadyExistsError, type LabelStore } from './label-store'
 import type { SourceIndex } from './contracts'
 
 const SESSION_COOKIE = 'stellar_atlas_session'
-const OAUTH_STATE_COOKIE = 'stellar_atlas_oauth_state'
+const STATE_COOKIE = 'stellar_atlas_oauth_state'
 
 export type ApiConfig = {
   publicOrigin: string
-  sessionSecret: string
+  sessionSigningSecret: string
+  oauthStateSecret: string
   maintainers: ReadonlySet<string>
   githubClientId: string
   githubClientSecret: string
@@ -30,7 +31,7 @@ export function createApiServer(config: ApiConfig) {
         return sendJson(response, 200, { labels: config.labelStore.listLabels() })
       }
       if (request.method === 'GET' && url.pathname === '/api/session') {
-        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSecret)
+        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSigningSecret)
         return sendJson(response, 200, {
           authenticated: Boolean(session),
           maintainer: Boolean(session && config.maintainers.has(session.login)),
@@ -38,8 +39,8 @@ export function createApiServer(config: ApiConfig) {
         })
       }
       if (request.method === 'GET' && url.pathname === '/api/auth/github') {
-        const state = createOAuthState(config.sessionSecret)
-        setCookie(response, OAUTH_STATE_COOKIE, state.token, 10 * 60)
+        const state = createOAuthState(config.oauthStateSecret)
+        setCookie(response, STATE_COOKIE, state.token, 10 * 60)
         const authorizationUrl = new URL('https://github.com/login/oauth/authorize')
         authorizationUrl.searchParams.set('client_id', config.githubClientId)
         authorizationUrl.searchParams.set('redirect_uri', `${config.publicOrigin}/api/auth/github/callback`)
@@ -48,20 +49,20 @@ export function createApiServer(config: ApiConfig) {
         return redirect(response, authorizationUrl.toString())
       }
       if (request.method === 'GET' && url.pathname === '/api/auth/github/callback') {
-        if (!verifyOAuthState(url.searchParams.get('state') ?? undefined, readCookies(request)[OAUTH_STATE_COOKIE], config.sessionSecret)) {
+        if (!verifyOAuthState(url.searchParams.get('state') ?? undefined, readCookies(request)[STATE_COOKIE], config.oauthStateSecret)) {
           return sendJson(response, 400, { error: 'Invalid OAuth state.' })
         }
         const code = url.searchParams.get('code')
         if (!code) return sendJson(response, 400, { error: 'Missing GitHub OAuth code.' })
         const login = await exchangeGitHubLogin(code, config, fetchImplementation)
         if (!config.maintainers.has(login)) return sendJson(response, 403, { error: 'GitHub account is not an atlas maintainer.' })
-        setCookie(response, SESSION_COOKIE, createSignedSession(login, config.sessionSecret), 8 * 60 * 60)
-        clearCookie(response, OAUTH_STATE_COOKIE)
+        setCookie(response, SESSION_COOKIE, createSignedSession(login, config.sessionSigningSecret), 8 * 60 * 60)
+        clearCookie(response, STATE_COOKIE)
         return redirect(response, '/')
       }
       if (request.method === 'POST' && url.pathname === '/api/labels') {
         if (!isSameOrigin(request, config.publicOrigin)) return sendJson(response, 403, { error: 'Cross-origin label creation is not allowed.' })
-        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSecret)
+        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSigningSecret)
         if (!session || !config.maintainers.has(session.login)) return sendJson(response, 403, { error: 'Maintainer authentication is required.' })
         const body = await readJson(request)
         if (!isLabelRequest(body)) return sendJson(response, 400, { error: 'sourceId and displayLabel are required.' })

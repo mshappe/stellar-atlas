@@ -10,7 +10,7 @@ import { LabelAlreadyExistsError } from '../server/label-store'
 
 const origin = 'http://127.0.0.1'
 const sourceId = '1234567890123456789'
-const sessionCookie = `stellar_atlas_session=${createSignedSession('mshappe', 'test-secret')}`
+const sessionCookie = `stellar_atlas_session=${createSignedSession('mshappe', 'test-session-secret')}`
 const servers: Server[] = []
 const temporaryDirectories: string[] = []
 
@@ -25,7 +25,8 @@ function startApiServer(overrides: Partial<ApiConfig> = {}) {
   const created: unknown[] = []
   const server = createApiServer({
     publicOrigin: origin,
-    sessionSecret: 'test-secret',
+    sessionSigningSecret: 'test-session-secret',
+    oauthStateSecret: 'test-oauth-state-secret',
     maintainers: new Set(['mshappe']),
     githubClientId: 'client',
     githubClientSecret: 'secret',
@@ -93,7 +94,7 @@ describe('API', () => {
       .resolves.toEqual({ authenticated: false, maintainer: false })
     await expect(fetch(`${baseUrl}/api/session`, { headers: { Cookie: sessionCookie } }).then((response) => response.json()))
       .resolves.toEqual({ authenticated: true, maintainer: true, login: 'mshappe' })
-    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-secret')
+    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-session-secret')
     await expect(fetch(`${baseUrl}/api/session`, {
       headers: { Cookie: `stellar_atlas_session=${nonMaintainer}` },
     }).then((response) => response.json())).resolves.toEqual({
@@ -106,7 +107,7 @@ describe('API', () => {
   it('requires same-origin maintainer authentication before creating labels', async () => {
     const { server } = startApiServer()
     const baseUrl = await listen(server)
-    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-secret')
+    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-session-secret')
 
     expect((await postLabel(baseUrl, { origin })).status).toBe(403)
     expect((await postLabel(baseUrl, { cookie: `stellar_atlas_session=${nonMaintainer}`, origin })).status).toBe(403)
