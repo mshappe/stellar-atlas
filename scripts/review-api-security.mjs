@@ -9,13 +9,20 @@ const [auth, api, apiTests] = await Promise.all([
 ])
 
 const requirements = [
-  [auth.includes("kind: 'session' | 'oauth-state'"), 'typed session and OAuth-state tokens'],
+  [auth.includes("kind: 'session'"), 'typed session tokens'],
   [auth.includes("payload.kind !== 'session'"), 'session token-purpose validation'],
-  [auth.includes("payload?.kind === 'oauth-state'"), 'OAuth-state token-purpose validation'],
+  [
+    auth.includes("createCipheriv('aes-256-gcm'")
+      && auth.includes("createDecipheriv('aes-256-gcm'")
+      && auth.includes('timingSafeTextEqual(payload.nonce, state)'),
+    'encrypted and authenticated OAuth state',
+  ],
   [api.includes("return sendJson(response, 500, { error: 'Unexpected server error.' })"), 'generic unexpected-server error response'],
   [api.includes("new ApiRequestError(413"), 'oversized JSON rejection'],
   [api.includes("new ApiRequestError(400"), 'malformed JSON rejection'],
   [apiTests.includes('createApiServer'), 'HTTP API integration tests'],
+  [apiTests.includes('creates a session only for an OAuth-authenticated maintainer'), 'OAuth callback authorization coverage'],
+  [apiTests.includes('does not disclose unexpected server errors'), 'internal error non-disclosure coverage'],
 ]
 
 const missing = requirements.filter(([present]) => !present).map(([, description]) => description)

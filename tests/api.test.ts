@@ -198,6 +198,7 @@ describe('API', () => {
     expect(state).toBeTruthy()
     const stateCookie = authorization.headers.getSetCookie()[0]
     expect(stateCookie).toContain('stellar_atlas_oauth_state=')
+    expect(stateCookie).not.toContain(state)
     expect((await fetch(`${baseUrl}/api/auth/github/callback?code=code&state=wrong`, {
       headers: { Cookie: stateCookie },
     })).status).toBe(400)

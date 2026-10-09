@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       actions: read
+      checks: write
       contents: read
       packages: read
       security-events: write
@@ -64,11 +65,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Install actionlint
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7
-
       - name: Lint workflows
-        run: "$(go env GOPATH)/bin/actionlint"
+        uses: reviewdog/action-actionlint@a8ac3eea598697a830f7d8e701fc9fcbfde88974 # v1.80.0
+        with:
+          reporter: github-check
+          fail_on_error: true
 
       - name: Analyze workflow security
         uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
