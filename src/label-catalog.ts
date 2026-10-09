@@ -3,6 +3,11 @@ export type LabelCatalog = {
   sourceIds: ReadonlySet<string>
 }
 
+export type PersistentLabel = {
+  gaiaSourceId: string
+  displayLabel: string
+}
+
 export const EMPTY_LABEL_CATALOG: LabelCatalog = {
   labelsBySourceId: {},
   sourceIds: new Set(),
@@ -11,11 +16,6 @@ export const EMPTY_LABEL_CATALOG: LabelCatalog = {
 type LabelDefinition = {
   gaia_dr3_source_id: string
   display_label: string
-}
-
-type PersistentLabelDefinition = {
-  gaiaSourceId: string
-  displayLabel: string
 }
 
 export function parseLabelCatalog(value: unknown): LabelCatalog {
@@ -61,13 +61,26 @@ export function parsePersistentLabelCatalog(value: unknown): LabelCatalog {
   }))
 }
 
+export function addPersistentLabel(catalog: LabelCatalog, label: PersistentLabel): LabelCatalog {
+  return catalogFromDefinitions([
+    ...Object.entries(catalog.labelsBySourceId).map(([gaia_dr3_source_id, display_label]) => ({
+      gaia_dr3_source_id,
+      display_label,
+    })),
+    {
+      gaia_dr3_source_id: label.gaiaSourceId,
+      display_label: label.displayLabel,
+    },
+  ])
+}
+
 function isLabelDefinition(value: unknown): value is LabelDefinition {
   return isRecord(value)
     && typeof value.gaia_dr3_source_id === 'string'
     && typeof value.display_label === 'string'
 }
 
-function isPersistentLabelDefinition(value: unknown): value is PersistentLabelDefinition {
+function isPersistentLabelDefinition(value: unknown): value is PersistentLabel {
   return isRecord(value)
     && typeof value.gaiaSourceId === 'string'
     && typeof value.displayLabel === 'string'

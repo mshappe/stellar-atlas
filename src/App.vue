@@ -19,6 +19,7 @@ import {
   type AtlasSession,
   type LabelCandidates,
 } from './label-api'
+import { addPersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
 
 const atlas = useAtlasState()
@@ -151,7 +152,8 @@ async function createLabel(sourceId: string, displayLabel: string) {
   creationError.value = ''
   isCreatingLabel.value = true
   try {
-    await createPersistentLabel(sourceId, displayLabel)
+    const createdLabel = await createPersistentLabel(sourceId, displayLabel)
+    atlas.setLabelCatalog(addPersistentLabel(atlas.state.permanentLabels, createdLabel))
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     await refreshLabelCandidates()

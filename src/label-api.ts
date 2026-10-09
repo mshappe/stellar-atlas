@@ -1,4 +1,4 @@
-import { parsePersistentLabelCatalog, type LabelCatalog } from './label-catalog'
+import { parsePersistentLabelCatalog, type LabelCatalog, type PersistentLabel } from './label-catalog'
 
 export type AtlasSession = {
   authenticated: boolean
@@ -32,12 +32,16 @@ export async function loadLabelCandidates(sourceId: string): Promise<LabelCandid
   return value
 }
 
-export async function createPersistentLabel(sourceId: string, displayLabel: string) {
-  await requestJson('/api/labels', {
+export async function createPersistentLabel(sourceId: string, displayLabel: string): Promise<PersistentLabel> {
+  const value = await requestJson('/api/labels', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ sourceId, displayLabel }),
   })
+  if (!isRecord(value) || !isPersistentLabelDefinition(value.label)) {
+    throw new Error('The label creation API response is invalid.')
+  }
+  return value.label
 }
 
 async function requestJson(path: string, init?: RequestInit): Promise<unknown> {
@@ -67,6 +71,12 @@ function isLabelCandidates(value: unknown): value is LabelCandidates {
     && typeof value.sourceId === 'string'
     && Array.isArray(value.candidates)
     && value.candidates.every(isLabelCandidate)
+}
+
+function isPersistentLabelDefinition(value: unknown): value is PersistentLabel {
+  return isRecord(value)
+    && typeof value.gaiaSourceId === 'string'
+    && typeof value.displayLabel === 'string'
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
