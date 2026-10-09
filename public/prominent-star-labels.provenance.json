@@ -1,9 +1,9 @@
 {
   "purpose": "Evidence-backed labels shown for selected nearby stars in the Stellar Atlas viewer.",
-  "selection_rule": "A label is rendered only for the listed exact Gaia DR3 source_id values. Source IDs must be present in the bundled 300-light-year Gaia DR3 volume; most are present in the NASA Exoplanet Archive confirmed-host join, while explicitly documented general-volume labels use a published catalog crossmatch.",
+  "selection_rule": "A label is rendered only for the listed exact Gaia DR3 source_id values. Source IDs must be present in the bundled 150-light-year Gaia DR3 volume; most are present in the NASA Exoplanet Archive confirmed-host join, while explicitly documented general-volume labels use a published catalog crossmatch.",
   "source": {
     "catalog": "NASA Exoplanet Archive PSCompPars",
-    "provenance_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.provenance.json",
+    "provenance_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.provenance.json",
     "field": "hostname"
   },
   "general_volume_crossmatch_source": {

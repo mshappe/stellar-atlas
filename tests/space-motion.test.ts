@@ -93,7 +93,7 @@ describe('Gaia space motion', () => {
   })
 
   it('propagates a finite uncertainty for a committed focused-catalog source', () => {
-    const catalog = parseGaiaCsv(readFileSync(new URL('../public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv', import.meta.url), 'utf8'))
+    const catalog = parseGaiaCsv(readFileSync(new URL('../public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv', import.meta.url), 'utf8'))
     const source = catalog.rows.find((candidate) => hasMeasuredSixDimensionalState(candidate))
     expect(source).toBeDefined()
     expect(Number.isFinite(projectedPositionUncertaintyParsecs(source!, 5026))).toBe(true)

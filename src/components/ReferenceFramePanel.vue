@@ -12,10 +12,10 @@ import { MAX_DISTANCE_PARSECS } from '../atlas-data'
       <div><dt>Distance display</dt><dd>1 / parallax</dd></div>
       <div><dt>Point color</dt><dd>Gaia BP−RP index</dd></div>
       <div><dt>Point size</dt><dd>Absolute G magnitude</dd></div>
-      <div><dt>Map radius</dt><dd>300 ly / {{ MAX_DISTANCE_PARSECS.toFixed(5) }} pc</dd></div>
+      <div><dt>Map radius</dt><dd>150 ly / {{ MAX_DISTANCE_PARSECS.toFixed(5) }} pc</dd></div>
     </dl>
     <p class="caveat">
-      The cyan wire sphere marks the exact 300-ly volume around TRAPPIST-1. Colors are a visual mapping of measured BP−RP, and size is an extinction-unadjusted luminosity proxy—not physical radius or a spectral-type classification.
+      The cyan wire sphere marks the exact 150-ly volume around TRAPPIST-1. Colors are a visual mapping of measured BP−RP, and size is an extinction-unadjusted luminosity proxy—not physical radius or a spectral-type classification.
     </p>
   </section>
 </template>

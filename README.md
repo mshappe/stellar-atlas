@@ -1,6 +1,6 @@
 # Stellar Atlas
 
-An interactive browser viewer for Gaia DR3 astrometry. The bundled prototype is centered on TRAPPIST-1 and displays an exact 300-light-year TRAPPIST-1-centered volume. It does not synthesize stars, names, coordinates, distances, evidence, or ephemerides.
+An interactive browser viewer for Gaia DR3 astrometry. The bundled prototype is centered on TRAPPIST-1 and displays an exact 150-light-year TRAPPIST-1-centered volume. It does not synthesize stars, names, coordinates, distances, evidence, or ephemerides.
 
 ## Run
 
@@ -72,11 +72,11 @@ npm run check
 
 ## Bundled confirmed-exoplanet host prototype
 
-`public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv` contains 1,000 Gaia DR3 stars: 999 are joined by `gaia_dr3_id` to at least one record in the NASA Exoplanet Archive's Planetary Systems Composite Parameters (`PSCompPars`) table, which contains confirmed planets and published default parameter sets; Unukalhai is one explicitly marked named reference star. The selected-source panel identifies each row's catalog category and reports host/planet details only where they are present.
+`public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv` contains 545 Gaia DR3 stars: 544 are joined by `gaia_dr3_id` to at least one record in the NASA Exoplanet Archive's Planetary Systems Composite Parameters (`PSCompPars`) table, which contains confirmed planets and published default parameter sets; Unukalhai is one explicitly marked named reference star. The selected-source panel identifies each row's catalog category and reports host/planet details only where they are present.
 
-Sol is an explicit, selectable star object—not a Gaia DR3 source row. Its position and velocity are an ICRF-barycentric J2016.0 state from JPL Horizons, recorded in [`public/atlas-reference-objects.provenance.json`](public/atlas-reference-objects.provenance.json). Gaia’s survey geometry does not observe the Sun, so the Sol panel deliberately has no Gaia source ID, parallax, or Gaia photometry. The initial selected origin is TRAPPIST-1 (Gaia DR3 `2635476908753563008`), which places it at displayed `(0, 0, 0)` pc; that displayed coordinate is derived from the active origin and is not TRAPPIST-1's stored position. The cyan wire sphere is the exact 300-light-year (91.98041813566518 pc) TRAPPIST-1-centered selection boundary. The exact Gaia/NASA source queries, retrieval timestamps, conversion, join method, row counts, and limitations are recorded in [`public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.provenance.json`](public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.provenance.json).
+Sol is an explicit, selectable star object—not a Gaia DR3 source row. Its position and velocity are an ICRF-barycentric J2016.0 state from JPL Horizons, recorded in [`public/atlas-reference-objects.provenance.json`](public/atlas-reference-objects.provenance.json). Gaia’s survey geometry does not observe the Sun, so the Sol panel deliberately has no Gaia source ID, parallax, or Gaia photometry. The initial selected origin is TRAPPIST-1 (Gaia DR3 `2635476908753563008`), which places it at displayed `(0, 0, 0)` pc; that displayed coordinate is derived from the active origin and is not TRAPPIST-1's stored position. The cyan wire sphere is the exact 150-light-year (45.99020906783259 pc) TRAPPIST-1-centered selection boundary. The exact Gaia/NASA source queries, retrieval timestamps, conversion, join method, row counts, and limitations are recorded in [`public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.provenance.json`](public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.provenance.json).
 
-The Gaia retrieval uses the preliminary containment cutoff `parallax >= 9.574203430085845 mas`, then performs the final membership test in Cartesian ICRS coordinates: a source is included only when its reciprocal-parallax position is at most 91.98041813566518 pc from TRAPPIST-1. The preliminary cutoff is not the final selection rule. NASA's `sy_dist` likewise only bounds a broad containment retrieval; the exact Gaia Cartesian test decides final membership. This is not equivalent to an uncertainty-aware claim that every source is definitively within 300 ly.
+The 150-ly catalog is an exact subset of the cited 300-ly Gaia retrieval. It reapplies the final Cartesian ICRS membership test: a source is included only when its reciprocal-parallax position is at most 45.99020906783259 pc from TRAPPIST-1. The original broad containment cutoff is not the final selection rule. This is not equivalent to an uncertainty-aware claim that every source is definitively within 150 ly.
 
 No debris-belt-only systems are currently included. A belt catalogue must supply a citable detection and an unambiguous Gaia DR3 crossmatch before it is added; candidate classifications and positional guesses are excluded.
 
@@ -86,7 +86,7 @@ When present, point color is a visual interpolation of Gaia DR3's measured `bp_r
 
 ## Labels
 
-The seed catalog begins with twelve deliberately limited, evidence-backed labels: Tau Ceti, Proxima Centauri, Epsilon Eridani, Barnard's Star, TRAPPIST-1, 55 Cancri, 51 Pegasi, Gliese 581, Ross 508, LHS 1140, Kapteyn's Star, and Unukalhai (Serpent's Head). Each is an exact Gaia DR3 source ID in the bundled 300-ly volume. The matched NASA Archive host identifier, alias resolution, and the Gaia DR2→DR3 crossmatch used for the one non-host label are recorded in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json). Maintainer-created permanent labels have their own server-verified source-index evidence and append-only audit event. No position-based name guessing is used. The **Hide unlabeled stars** control filters the active catalog to permanent labels plus any current temporary search labels.
+The seed catalog begins with twelve deliberately limited, evidence-backed labels: Tau Ceti, Proxima Centauri, Epsilon Eridani, Barnard's Star, TRAPPIST-1, 55 Cancri, 51 Pegasi, Gliese 581, Ross 508, LHS 1140, Kapteyn's Star, and Unukalhai (Serpent's Head). Each is an exact Gaia DR3 source ID in the bundled 150-ly volume. The matched NASA Archive host identifier, alias resolution, and the Gaia DR2→DR3 crossmatch used for the one non-host label are recorded in [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json). Maintainer-created permanent labels have their own server-verified source-index evidence and append-only audit event. No position-based name guessing is used. The **Hide unlabeled stars** control filters the active catalog to permanent labels plus any current temporary search labels.
 
 Selected-source and measurement display names expand standard Bayer and Flamsteed designations: for example, the NASA host identifier `47 UMa` is displayed as **47 Ursae Majoris**. The original NASA identifier remains visible in the selected-source details.
 
@@ -110,7 +110,7 @@ Select distinct stars or Sol to construct an ordered route. The compact panel di
 
 ## Complete Gaia comparison layer
 
-The **All Gaia DR3 sources** selector loads `public/gaia-dr3-trappist-1-300ly.csv`, the full 443,660-source exact 300-ly TRAPPIST-1-centered volume. Keep this layer when identifying non-host candidates, comparing locations between named systems, or requesting a star that is not an exoplanet host. Its query, retrieval timestamp, conversion, and limits are recorded in [`public/gaia-dr3-trappist-1-300ly.provenance.json`](public/gaia-dr3-trappist-1-300ly.provenance.json).
+The **All Gaia DR3 sources** selector loads `public/gaia-dr3-trappist-1-150ly.csv`, the full 40,188-source exact 150-ly TRAPPIST-1-centered volume. Keep this layer when identifying non-host candidates, comparing locations between named systems, or requesting a star that is not an exoplanet host. Its derivation, source retrieval, conversion, and limits are recorded in [`public/gaia-dr3-trappist-1-150ly.provenance.json`](public/gaia-dr3-trappist-1-150ly.provenance.json).
 
 ## Loading a replacement Gaia DR3 data set
 
@@ -120,7 +120,7 @@ Export a CSV from the [Gaia Archive](https://gea.esac.esa.int/archive/) with the
 source_id, ra, dec, parallax
 ```
 
-Optional columns shown when present are `ra_error`, `dec_error`, `parallax_error`, and `phot_g_mean_mag`. The viewer excludes points beyond the fixed 300-ly radius, even when a replacement file contains them. Record the exact ADQL query and retrieval date with every data file used in a project.
+Optional columns shown when present are `ra_error`, `dec_error`, `parallax_error`, and `phot_g_mean_mag`. The viewer excludes points beyond the fixed 150-ly radius, even when a replacement file contains them. Record the exact ADQL query and retrieval date with every data file used in a project.
 
 ## Coordinate and distance policy
 

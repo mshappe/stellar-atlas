@@ -1,0 +1,37 @@
+{
+  "catalog": "Gaia DR3",
+  "table": "gaiadr3.gaia_source",
+  "retrieved_at": "2026-10-08T17:24:19-05:00",
+  "endpoint": "https://gea.esac.esa.int/tap-server/tap/sync",
+  "format": "CSV",
+  "broad_containment_adql": "SELECT source_id,ra,dec,parallax,parallax_error,phot_g_mean_mag,bp_rp FROM gaiadr3.gaia_source WHERE parallax >= 9.574203430085845",
+  "broad_containment_rule": "The 150-light-year catalog is an exact subset of the cited 300-light-year Gaia DR3 retrieval. Its final Cartesian membership rule, rather than the former broad retrieval cutoff, decides inclusion.",
+  "broad_source_row_count": 666109,
+  "final_selection_rule": "At Gaia DR3 J2016.0, transform each source and TRAPPIST-1 (Gaia DR3 2635476908753563008) from RA, Dec, and reciprocal parallax into ICRS Cartesian parsecs, then retain sources whose Euclidean separation from TRAPPIST-1 is less than or equal to 45.99020906783259 pc.",
+  "selection_center": {
+    "gaia_dr3_source_id": "2635476908753563008",
+    "name": "TRAPPIST-1",
+    "icrs_cartesian_parsecs": [
+      12.08188821006726,
+      -2.872402434133071,
+      -1.095998012840599
+    ]
+  },
+  "radius_light_years": 150,
+  "radius_parsecs": 45.99020906783259,
+  "light_years_per_parsec": 3.2615637771674333,
+  "row_count": 40188,
+  "astrometry_reference_epoch": "J2016.0",
+  "coordinate_frame": "ICRS",
+  "generator": "scripts/filter_trappist_catalog_radius.py",
+  "limitations": [
+    "This is a reciprocal-parallax display selection, not a probabilistic distance-selected census.",
+    "Gaia DR3 positions are not propagated from J2016.0 in this viewer.",
+    "Sol is a separately sourced star object from JPL Horizons, not a Gaia DR3 source record."
+  ],
+  "derivation": {
+    "input_file": "gaia-dr3-trappist-1-300ly.csv",
+    "input_row_count": 443660,
+    "method": "Reapply the exact reciprocal-parallax ICRS Cartesian membership rule at the 150-light-year radius using scripts/filter_trappist_catalog_radius.py."
+  }
+}
