@@ -6,6 +6,7 @@ import {
   GAIA_REFERENCE_EPOCH,
   hasMeasuredSixDimensionalState,
   propagateGaiaPosition,
+  projectedPositionUncertaintyParsecs,
 } from '../src/space-motion'
 
 const row: GaiaRow = {
@@ -65,5 +66,11 @@ describe('Gaia space motion', () => {
       ...row,
       raDecCorrelation: 2,
     })).toBeUndefined()
+  })
+
+  it('propagates measured input uncertainty to a finite Cartesian 1σ value', () => {
+    const uncertainty = projectedPositionUncertaintyParsecs(row, 5026)
+    expect(uncertainty).toBeGreaterThan(0)
+    expect(Number.isFinite(uncertainty)).toBe(true)
   })
 })

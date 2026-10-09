@@ -77,10 +77,48 @@ export function astrometricCovariance(row: GaiaRow): Matrix | undefined {
     covariance.set(first, second, value)
     covariance.set(second, first, value)
   }
+
   try {
     new CholeskyDecomposition(covariance)
     return covariance
   } catch {
     return undefined
   }
+}
+
+export function projectedPositionUncertaintyParsecs(row: GaiaRow, epoch: number): number | undefined {
+  const astrometric = astrometricCovariance(row)
+  if (!astrometric || row.radialVelocityError === undefined || !Number.isFinite(row.radialVelocityError)) return undefined
+  const values = [row.ra, row.dec, row.parallax, row.pmra, row.pmdec, row.radialVelocity]
+  if (values.some((value) => value === undefined || !Number.isFinite(value))) return undefined
+  const steps = [1e-4, 1e-4, 1e-4, 1e-4, 1e-4, 1e-4]
+  const jacobian = Matrix.zeros(3, 6)
+  for (let index = 0; index < values.length; index += 1) {
+    const plus = projectWithParameterOffset(row, epoch, index, steps[index]!)
+    const minus = projectWithParameterOffset(row, epoch, index, -steps[index]!)
+    if (!plus || !minus) return undefined
+    for (let coordinate = 0; coordinate < 3; coordinate += 1) {
+      jacobian.set(coordinate, index, (plus[coordinate]! - minus[coordinate]!) / (2 * steps[index]!))
+    }
+  }
+  const covariance = Matrix.zeros(6, 6)
+  covariance.setSubMatrix(astrometric, 0, 0)
+  covariance.set(5, 5, row.radialVelocityError ** 2)
+  const projected = jacobian.mmul(covariance).mmul(jacobian.transpose())
+  const trace = projected.get(0, 0) + projected.get(1, 1) + projected.get(2, 2)
+  return trace >= 0 && Number.isFinite(trace) ? Math.sqrt(trace) : undefined
+}
+
+function projectWithParameterOffset(row: GaiaRow, epoch: number, index: number, offset: number) {
+  const values = [row.ra, row.dec, row.parallax, row.pmra, row.pmdec, row.radialVelocity]
+  values[index]! += offset
+  return propagateGaiaPosition({
+    ...row,
+    ra: values[0]!,
+    dec: values[1]!,
+    parallax: values[2]!,
+    pmra: values[3]!,
+    pmdec: values[4]!,
+    radialVelocity: values[5]!,
+  }, epoch)
 }

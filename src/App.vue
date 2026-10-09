@@ -21,7 +21,7 @@ import {
 } from './label-api'
 import { addPersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
-import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, propagateGaiaPosition } from './space-motion'
+import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, projectedPositionUncertaintyParsecs, propagateGaiaPosition } from './space-motion'
 
 const atlas = useAtlasState()
 const scene = ref<InstanceType<typeof AtlasScene>>()
@@ -322,7 +322,11 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
     fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? 'Measured Gaia proper motion and radial velocity available' : 'Unavailable: this source is excluded from projected rendering'])
-    if (hasMeasuredSixDimensionalState(object)) fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
+    if (hasMeasuredSixDimensionalState(object)) {
+      const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
+      fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
+      fields.push(['Projected 1σ Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
+    }
     if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
     if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
   }
