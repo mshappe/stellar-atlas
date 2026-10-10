@@ -44,6 +44,7 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 .workspace {
   min-height: 0;
   display: grid;
+  grid-template-areas: 'sidebar scene';
   grid-template-columns: minmax(260px, 320px) 1fr;
   border: 1px solid #233652;
   border-radius: .7rem;
@@ -52,6 +53,7 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 }
 
 .sidebar {
+  grid-area: sidebar;
   min-width: 0;
   min-height: 0;
   overflow: auto;
@@ -235,11 +237,11 @@ code { color: #cee0ff; }
 .search-results span { color: #94a8c4; font-size: .75rem; overflow-wrap: anywhere; }
 
 dl { margin: 0; }
-dl div { display: grid; grid-template-columns: 1fr auto; gap: 1rem; padding: .35rem 0; }
+dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: .35rem 0; }
 dt { color: #89aeea !important; }
-dd { margin: 0; text-align: right; }
+dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
 
-.scene-shell { min-height: 0; position: relative; }
+.scene-shell { grid-area: scene; min-height: 0; position: relative; }
 .atlas-scene { position: absolute; inset: 0; }
 .atlas-scene canvas { display: block; width: 100%; height: 100%; outline: none; }
 .motion-trail-status {
@@ -367,10 +369,44 @@ dd { margin: 0; text-align: right; }
 footer { align-items: center; color: #8da0bc; font-size: .75rem; }
 a { color: #9ec3ff; }
 
+@media (max-width: 1000px) {
+  .atlas { padding: 1rem; gap: 1rem; }
+  .workspace { grid-template-columns: minmax(230px, 280px) 1fr; }
+  .sidebar { padding: 1rem; }
+}
+
+@media (max-height: 760px) and (min-width: 721px) {
+  .atlas { padding: .75rem 1rem; gap: .75rem; }
+  h1 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+  .sidebar { padding: .9rem; }
+  .sidebar section + section { margin-top: 1rem; padding-top: 1rem; }
+}
+
 @media (max-width: 720px) {
-  .atlas { height: auto; padding: .75rem; }
-  .workspace { height: auto; grid-template-columns: 1fr; }
-  .sidebar { border-right: 0; border-bottom: 1px solid #233652; }
-  .scene-shell { min-height: 60vh; }
+  .atlas { height: auto; min-height: 100svh; padding: .75rem; gap: .75rem; }
+  .workspace {
+    height: auto;
+    grid-template-areas:
+      'scene'
+      'sidebar';
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    padding: 1rem;
+    border-top: 1px solid #233652;
+    border-right: 0;
+  }
+  .scene-shell { min-height: min(60svh, 32rem); }
   header { align-items: start; flex-direction: column; }
+  footer { align-items: start; flex-direction: column; gap: .4rem; }
+  .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
+  .field-of-view-status { left: .75rem; bottom: .75rem; }
+  .scene-hint { right: .75rem; bottom: 2.75rem; left: .75rem; font-size: .72rem; }
+}
+
+@media (max-width: 420px) {
+  .catalog-state { font-size: .85rem; }
+  .search-form > div { flex-wrap: wrap; }
+  .search-form input { min-width: 100%; }
+  dl div { gap: .5rem; font-size: .8rem; }
 }
