@@ -59,8 +59,8 @@ function changeProjectionEpoch(event: Event) {
         >
           Imported Gaia DR3 CSV
         </option>
-        <option value="confirmed-hosts">Focused stars (1,000)</option>
-        <option value="all-stars">All Gaia DR3 sources (443,660)</option>
+        <option value="confirmed-hosts">Focused stars (545)</option>
+        <option value="all-stars">All Gaia DR3 sources (40,188)</option>
       </select>
     </label>
     <button
@@ -74,7 +74,7 @@ function changeProjectionEpoch(event: Event) {
       v-if="projectionEpoch !== undefined"
       class="status"
     >
-      {{ projectedSourceCount?.toLocaleString() }} focused sources have measured 6D inputs and are rendered at the projected epoch. Their physical displacement may be visually small within the 300-ly field; select a source for exact coordinates and displacement.
+      {{ projectedSourceCount?.toLocaleString() }} focused sources have measured 6D inputs and are rendered at the projected epoch. Their physical displacement may be visually small within the 150-ly field; select a source for exact coordinates and displacement.
     </p>
     <p
       v-if="projectionRendering"

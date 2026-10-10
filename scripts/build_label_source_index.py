@@ -87,12 +87,12 @@ def main() -> None:
     parser.add_argument(
         "--all-sources",
         type=Path,
-        default=Path("public/gaia-dr3-trappist-1-300ly.csv"),
+        default=Path("public/gaia-dr3-trappist-1-150ly.csv"),
     )
     parser.add_argument(
         "--focused-sources",
         type=Path,
-        default=Path("public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv"),
+        default=Path("public/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv"),
     )
     parser.add_argument(
         "--output",

@@ -1,6 +1,7 @@
 import { shallowReactive } from 'vue'
 import {
   INITIAL_ORIGIN_SOURCE_ID,
+  MAX_DISTANCE_LIGHT_YEARS,
   MAX_DISTANCE_PARSECS,
   SOL,
 } from '../atlas-data'
@@ -161,7 +162,7 @@ function filterCatalogToSelectedOrigin(catalog: ParsedCatalog, origin: GaiaRow):
     center,
     MAX_DISTANCE_PARSECS,
   ))
-  if (!rows.length) throw new Error('No catalog sources are within 300 light-years of the selected origin.')
+  if (!rows.length) throw new Error(`No catalog sources are within ${MAX_DISTANCE_LIGHT_YEARS} light-years of the selected origin.`)
   return {
     rows,
     rejected: catalog.rejected,

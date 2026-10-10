@@ -23,10 +23,10 @@
   "row_count": 443660,
   "astrometry_reference_epoch": "J2016.0",
   "coordinate_frame": "ICRS",
-  "generator": "scripts/build_trappist_centered_catalogs.py",
+  "generator": "scripts/build_trappist_centered_catalogs.py --radius-light-years 300",
   "limitations": [
     "This is a reciprocal-parallax display selection, not a probabilistic distance-selected census.",
-    "Gaia DR3 positions are not propagated from J2016.0 in this viewer.",
+    "This source catalog records Gaia DR3 positions at J2016.0 and contains no kinematic fields for projection.",
     "Sol is a separately sourced star object from JPL Horizons, not a Gaia DR3 source record."
   ]
 }

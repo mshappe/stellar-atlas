@@ -10,7 +10,7 @@ export const SOL: NonGaiaStar = {
 
 export const LIGHT_YEARS_PER_PARSEC = 3.2615637771674333
 export const LIGHT_MEGASECONDS_PER_LIGHT_YEAR = 31.5576
-export const MAX_DISTANCE_LIGHT_YEARS = 300
+export const MAX_DISTANCE_LIGHT_YEARS = 150
 export const MAX_DISTANCE_PARSECS = MAX_DISTANCE_LIGHT_YEARS / LIGHT_YEARS_PER_PARSEC
 export const INITIAL_ORIGIN_SOURCE_ID = '2635476908753563008'
 export const MINIMUM_PROJECTION_EPOCH = 5026
@@ -18,14 +18,14 @@ export const MAXIMUM_PROJECTION_EPOCH = 5526
 
 export const BUNDLED_CATALOGS = {
   'confirmed-hosts': {
-    file: 'gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv',
-    count: 1_000,
+    file: 'gaia-dr3-confirmed-exoplanet-hosts-trappist-1-150ly.csv',
+    count: 545,
     focusedCatalog: true,
     label: 'focused stars',
   },
   'all-stars': {
-    file: 'gaia-dr3-trappist-1-300ly.csv',
-    count: 443_660,
+    file: 'gaia-dr3-trappist-1-150ly.csv',
+    count: 40_188,
     focusedCatalog: false,
     label: 'Gaia DR3 sources',
   },

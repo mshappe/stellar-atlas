@@ -1,10 +1,10 @@
 {
-  "purpose": "Cited SIMBAD radial-velocity supplements for focused Gaia DR3 sources without Gaia DR3 radial velocities.",
+  "purpose": "Cited SIMBAD radial-velocity supplements for focused Gaia DR3 sources inside the exact 150-light-year TRAPPIST-1-centered volume that lack Gaia DR3 radial velocities.",
   "source": {
     "catalog": "SIMBAD basic table",
     "endpoint": "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
     "retrieved_at": "2026-10-09T17:04:29-05:00",
-    "selection": "Exact Gaia DR3 identifiers for focused catalog sources missing Gaia radial_velocity or radial_velocity_error."
+    "selection": "Exact Gaia DR3 identifiers for focused 150-light-year catalog sources missing Gaia radial_velocity or radial_velocity_error."
   },
   "records": [
     {
@@ -24,52 +24,12 @@
       "bibliography_code": "2018A&A...616A...7S"
     },
     {
-      "gaia_dr3_source_id": "114340658009875072",
-      "main_id": "HD  17607",
-      "radial_velocity_km_s": 25.04,
-      "radial_velocity_error_km_s": 0.94,
-      "quality": "B",
-      "bibliography_code": "2018yCat.1345....0G"
-    },
-    {
-      "gaia_dr3_source_id": "412783469966211456",
-      "main_id": "BD+55   362",
-      "radial_velocity_km_s": -25.51,
-      "radial_velocity_error_km_s": 0.57,
-      "quality": "A",
-      "bibliography_code": "2018yCat.1345....0G"
-    },
-    {
-      "gaia_dr3_source_id": "643819484617141504",
-      "main_id": "* mu. Leo",
-      "radial_velocity_km_s": 13.647,
-      "radial_velocity_error_km_s": 0.001,
-      "quality": "A",
-      "bibliography_code": "2018A&A...616A...7S"
-    },
-    {
       "gaia_dr3_source_id": "796443724462555904",
       "main_id": "LP  261-75",
       "radial_velocity_km_s": 10.2,
       "radial_velocity_error_km_s": 0.2,
       "quality": "A",
       "bibliography_code": "2012ApJ...758...56S"
-    },
-    {
-      "gaia_dr3_source_id": "1041808368494264576",
-      "main_id": "* omi UMa",
-      "radial_velocity_km_s": 19.8,
-      "radial_velocity_error_km_s": 0.2,
-      "quality": "A",
-      "bibliography_code": "2006AstL...32..759G"
-    },
-    {
-      "gaia_dr3_source_id": "1220404653534258816",
-      "main_id": "* eps CrB",
-      "radial_velocity_km_s": -32.42,
-      "radial_velocity_error_km_s": 0.07,
-      "quality": "A",
-      "bibliography_code": "2005A&A...430..165F"
     },
     {
       "gaia_dr3_source_id": "1380293091823646720",
@@ -110,14 +70,6 @@
       "radial_velocity_error_km_s": 0.0012,
       "quality": "A",
       "bibliography_code": "2018A&A...616A...7S"
-    },
-    {
-      "gaia_dr3_source_id": "2101449265111030912",
-      "main_id": "Kepler-1582",
-      "radial_velocity_km_s": -12.673,
-      "radial_velocity_error_km_s": 3.7,
-      "quality": "C",
-      "bibliography_code": "2019ApJ...883..175Y"
     },
     {
       "gaia_dr3_source_id": "2168280502430898944",
@@ -208,22 +160,6 @@
       "bibliography_code": "2006AstL...32..759G"
     },
     {
-      "gaia_dr3_source_id": "3459372646830687104",
-      "main_id": "TWA 27",
-      "radial_velocity_km_s": 7.5,
-      "radial_velocity_error_km_s": 2.0,
-      "quality": "B",
-      "bibliography_code": "2010ApJ...715L.165R"
-    },
-    {
-      "gaia_dr3_source_id": "3704342295607157120",
-      "main_id": "* del Vir",
-      "radial_velocity_km_s": -18.87,
-      "radial_velocity_error_km_s": 0.21,
-      "quality": "A",
-      "bibliography_code": "2005A&A...430..165F"
-    },
-    {
       "gaia_dr3_source_id": "3796072592206250624",
       "main_id": "Ross  128",
       "radial_velocity_km_s": -30.66,
@@ -240,14 +176,6 @@
       "bibliography_code": "2015A&A...574A..50J"
     },
     {
-      "gaia_dr3_source_id": "4233021433662981760",
-      "main_id": "BD+03  4397A",
-      "radial_velocity_km_s": 0.57,
-      "radial_velocity_error_km_s": 0.23,
-      "quality": "A",
-      "bibliography_code": "2018yCat.1345....0G"
-    },
-    {
       "gaia_dr3_source_id": "4429785739602747392",
       "main_id": "* alf Ser",
       "radial_velocity_km_s": 2.63,
@@ -262,30 +190,6 @@
       "radial_velocity_error_km_s": 0.0001,
       "quality": "A",
       "bibliography_code": "2018A&A...616A...7S"
-    },
-    {
-      "gaia_dr3_source_id": "5183875103632956032",
-      "main_id": "2MASS J02495639-0557352",
-      "radial_velocity_km_s": 14.42,
-      "radial_velocity_error_km_s": 0.44,
-      "quality": "A",
-      "bibliography_code": "2017AJ....154...69S"
-    },
-    {
-      "gaia_dr3_source_id": "5212899427468919296",
-      "main_id": "HD  55820",
-      "radial_velocity_km_s": 27.2808,
-      "radial_velocity_error_km_s": 0.010119,
-      "quality": "A",
-      "bibliography_code": "2020AJ....160..120J"
-    },
-    {
-      "gaia_dr3_source_id": "5214002100193281920",
-      "main_id": "HD  68402",
-      "radial_velocity_km_s": 11.6,
-      "radial_velocity_error_km_s": 0.49,
-      "quality": "A",
-      "bibliography_code": "2018yCat.1345....0G"
     },
     {
       "gaia_dr3_source_id": "5357465071731312768",
@@ -310,30 +214,6 @@
       "radial_velocity_error_km_s": 2.3,
       "quality": "C",
       "bibliography_code": "2018yCat.1345....0G"
-    },
-    {
-      "gaia_dr3_source_id": "5982775854377691136",
-      "main_id": "HD 330075",
-      "radial_velocity_km_s": 61.204,
-      "radial_velocity_error_km_s": 0.0008,
-      "quality": "A",
-      "bibliography_code": "2018A&A...616A...7S"
-    },
-    {
-      "gaia_dr3_source_id": "6265374394490973184",
-      "main_id": "* gam Lib",
-      "radial_velocity_km_s": -26.71,
-      "radial_velocity_error_km_s": 0.04,
-      "quality": "A",
-      "bibliography_code": "2015A&A...574A..50J"
-    },
-    {
-      "gaia_dr3_source_id": "6475212134196589952",
-      "main_id": "HD 194490",
-      "radial_velocity_km_s": -10.177,
-      "radial_velocity_error_km_s": 0.0007,
-      "quality": "A",
-      "bibliography_code": "2018A&A...616A...7S"
     }
   ]
 }

@@ -1,7 +1,17 @@
+import { existsSync, readdirSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import { parseGaiaCsv } from '../src/gaia-csv'
 
 describe('parseGaiaCsv', () => {
+  it('keeps larger source catalogs out of Vite public output', () => {
+    const publicFiles = readdirSync(new URL('../public', import.meta.url))
+
+    expect(publicFiles).not.toContain('gaia-dr3-trappist-1-300ly.csv')
+    expect(publicFiles).not.toContain('gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv')
+    expect(existsSync(new URL('../data/source-catalogs/gaia-dr3-trappist-1-300ly.csv', import.meta.url))).toBe(true)
+    expect(existsSync(new URL('../data/source-catalogs/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv', import.meta.url))).toBe(true)
+  })
+
   it('treats missing trailing optional cells as absent', () => {
     const catalog = parseGaiaCsv([
       'source_id,ra,dec,parallax,phot_g_mean_mag,host_names',

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Build exact TRAPPIST-1-centered Gaia and confirmed-host catalog CSVs."""
 
+import argparse
 import csv
 import json
 import math
-import sys
 from collections import defaultdict
 from pathlib import Path
 
@@ -12,7 +12,7 @@ from pathlib import Path
 GAIA_PREFIX = "Gaia DR3 "
 TRAPPIST_SOURCE_ID = "2635476908753563008"
 LIGHT_YEARS_PER_PARSEC = 3.2615637771674333
-RADIUS_LIGHT_YEARS = 300
+RADIUS_LIGHT_YEARS = 150
 RADIUS_PARSECS = RADIUS_LIGHT_YEARS / LIGHT_YEARS_PER_PARSEC
 GAIA_COLUMNS = (
     "source_id",
@@ -66,8 +66,8 @@ def position_parsecs(row):
     )
 
 
-def in_volume(position, center):
-    return math.dist(position, center) <= RADIUS_PARSECS
+def in_volume(position, center, radius_parsecs):
+    return math.dist(position, center) <= radius_parsecs
 
 
 def nonempty(values):
@@ -121,7 +121,8 @@ def focused_row(gaia, planets):
     }
 
 
-def main(gaia_path, planets_path, all_output_path, focused_output_path):
+def main(gaia_path, planets_path, all_output_path, focused_output_path, radius_light_years):
+    radius_parsecs = radius_light_years / LIGHT_YEARS_PER_PARSEC
     hosts_by_source = defaultdict(list)
     with planets_path.open(newline="", encoding="utf-8") as source:
         for planet in csv.DictReader(source):
@@ -151,7 +152,7 @@ def main(gaia_path, planets_path, all_output_path, focused_output_path):
         for row in reader:
             input_row_count += 1
             position = position_parsecs(row)
-            if position is None or not in_volume(position, center):
+            if position is None or not in_volume(position, center, radius_parsecs):
                 continue
             output_row_count += 1
             writer.writerow({column: row[column] for column in GAIA_COLUMNS})
@@ -171,7 +172,7 @@ def main(gaia_path, planets_path, all_output_path, focused_output_path):
         "broad_gaia_input_rows": input_row_count,
         "trappist_source_id": TRAPPIST_SOURCE_ID,
         "trappist_position_parsecs": center,
-        "radius_parsecs": RADIUS_PARSECS,
+        "radius_parsecs": radius_parsecs,
         "all_catalog_rows": output_row_count,
         "focused_catalog_rows": len(focused_rows),
         "confirmed_exoplanet_hosts": host_count,
@@ -182,8 +183,23 @@ def main(gaia_path, planets_path, all_output_path, focused_output_path):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 5:
-        raise SystemExit(
-            f"Usage: {Path(sys.argv[0]).name} BROAD_GAIA_CSV NASA_PLANETS_CSV ALL_OUTPUT_CSV FOCUSED_OUTPUT_CSV"
-        )
-    main(*(Path(argument) for argument in sys.argv[1:]))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--radius-light-years",
+        type=float,
+        default=RADIUS_LIGHT_YEARS,
+    )
+    parser.add_argument("gaia_path", type=Path)
+    parser.add_argument("planets_path", type=Path)
+    parser.add_argument("all_output_path", type=Path)
+    parser.add_argument("focused_output_path", type=Path)
+    args = parser.parse_args()
+    if not math.isfinite(args.radius_light_years) or args.radius_light_years <= 0:
+        parser.error("--radius-light-years must be a positive finite number.")
+    main(
+        args.gaia_path,
+        args.planets_path,
+        args.all_output_path,
+        args.focused_output_path,
+        args.radius_light_years,
+    )

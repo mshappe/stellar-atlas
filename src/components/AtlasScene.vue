@@ -3,9 +3,10 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import { MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
+import { LIGHT_YEARS_PER_PARSEC, MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
 import { cartesianPosition, relativeCartesianPosition } from '../catalog'
+import { pickClosestScreenPoint } from '../scene-picking'
 import { GAIA_REFERENCE_EPOCH, propagateGaiaPosition } from '../space-motion'
 
 const props = defineProps<{
@@ -38,6 +39,7 @@ const COLOR_STOPS: Array<[number, [number, number, number]]> = [
 
 const sceneElement = ref<HTMLDivElement>()
 const motionTrailsVisible = ref(false)
+const fieldOfView = ref('')
 const catalogRows = computed(() => (props.catalog?.rows ?? []).filter((row) => (
   props.projectionEpoch === undefined || propagateGaiaPosition(row, props.projectionEpoch) !== undefined
 )))
@@ -62,9 +64,6 @@ let axes: THREE.AxesHelper | undefined
 let solMarker: THREE.Points | undefined
 let solLabel: CSS2DObject | undefined
 let starLabels: THREE.Group | undefined
-const raycaster = new THREE.Raycaster()
-const pointer = new THREE.Vector2()
-
 onMounted(() => {
   if (!sceneElement.value) return
   initializeScene(sceneElement.value)
@@ -152,8 +151,6 @@ function initializeScene(container: HTMLDivElement) {
   scene.add(solLabel)
   starLabels = new THREE.Group()
   scene.add(starLabels)
-  raycaster.params.Points!.threshold = 0.25
-
   container.addEventListener('contextmenu', (event) => {
     event.preventDefault()
     if (props.routeEndpoints.length) emit('popRoute')
@@ -193,11 +190,26 @@ function resizeRenderer() {
   renderer.setSize(width, height, false)
   labelRenderer.setSize(width, height)
   routeOverlay.setAttribute('viewBox', `0 0 ${width} ${height}`)
+  updateFieldOfView()
+}
+
+function updateFieldOfView() {
+  if (!camera || !controls) return
+  const distance = camera.position.distanceTo(controls.target)
+  const heightParsecs = 2 * distance * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2))
+  const widthParsecs = heightParsecs * camera.aspect
+  fieldOfView.value = `Field at orbit target: ${formatFieldDimension(widthParsecs)} × ${formatFieldDimension(heightParsecs)}`
+}
+
+function formatFieldDimension(parsecs: number) {
+  const lightYears = parsecs * LIGHT_YEARS_PER_PARSEC
+  return lightYears >= 100 ? `${lightYears.toFixed(0)} ly` : `${lightYears.toPrecision(3)} ly`
 }
 
 function render() {
   if (!scene || !camera || !renderer || !labelRenderer || !controls) return
   controls.update()
+  updateFieldOfView()
   fadeMotionTrails()
   renderer.render(scene, camera)
   updateRouteOverlay()
@@ -420,17 +432,36 @@ function focusPoint(event: MouseEvent) {
 
 function pickObject(event: MouseEvent): AtlasObject | undefined {
   if (!camera || !renderer) return undefined
+  const activeCamera = camera
   const bounds = renderer.domElement.getBoundingClientRect()
-  pointer.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1
-  pointer.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1
-  raycaster.setFromCamera(pointer, camera)
-  const row = stars
-    ? raycaster.intersectObject(stars)
-      .map((intersection) => intersection.index === undefined ? undefined : catalogRows.value[intersection.index])
-      .find((candidate) => candidate && (!props.hideUnlabeledStars || props.labelIds.has(candidate.sourceId)))
-    : undefined
-  if (row) return row
-  return solMarker && raycaster.intersectObject(solMarker)[0] ? SOL : undefined
+  const x = event.clientX - bounds.left
+  const y = event.clientY - bounds.top
+  const objects = [
+    ...catalogRows.value.filter((row) => !props.hideUnlabeledStars || props.labelIds.has(row.sourceId)),
+    SOL,
+  ]
+  return pickClosestScreenPoint(objects.flatMap((object) => {
+    const projected = relativePosition(object).project(activeCamera)
+    if (projected.z < -1 || projected.z > 1) return []
+    return [{
+      value: object,
+      x: (projected.x * 0.5 + 0.5) * bounds.width,
+      y: (-projected.y * 0.5 + 0.5) * bounds.height,
+      radius: screenPointRadius(object),
+    }]
+  }), x, y)
+}
+
+function screenPointRadius(object: AtlasObject) {
+  if (!camera || !renderer || isNonGaiaStar(object)) return 8
+  const position = relativePosition(object)
+  const viewPosition = position.applyMatrix4(camera.matrixWorldInverse)
+  const pointDiameter = THREE.MathUtils.clamp(
+    pointSize(object.magnitude, positionFromRow(object).length()) * (300 / Math.max(0.001, -viewPosition.z)),
+    6,
+    18,
+  )
+  return Math.max(6, pointDiameter / renderer.getPixelRatio() / 2 + 3)
 }
 
 function focusOnObject(object: AtlasObject) {
@@ -535,6 +566,9 @@ defineExpose({ focusObject: focusOnObject })
       class="motion-trail-status"
     >
       Cyan ghosts and lines show J2016.0 positions; they fade over two minutes.
+    </p>
+    <p class="field-of-view-status">
+      {{ fieldOfView }}
     </p>
   </div>
 </template>
