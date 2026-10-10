@@ -160,3 +160,7 @@ export function formatDisplayName(name: string) {
   if (!constellation) return name
   return `${GREEK_DESIGNATIONS[designation.toLowerCase()] ?? designation} ${constellation}${component}`
 }
+
+export function formatMeasurement(value: number) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(value)
+}

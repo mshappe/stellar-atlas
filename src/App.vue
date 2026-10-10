@@ -10,7 +10,7 @@ import ReferenceFramePanel from './components/ReferenceFramePanel.vue'
 import RoutePanel from './components/RoutePanel.vue'
 import SelectionPanel from './components/SelectionPanel.vue'
 import { useAtlasState } from './composables/useAtlasState'
-import { cartesianDistance, cartesianPosition, formatDisplayName, routeDistanceFromPositions } from './catalog'
+import { cartesianDistance, cartesianPosition, formatDisplayName, formatMeasurement, routeDistanceFromPositions } from './catalog'
 import {
   createPersistentLabel,
   loadAtlasSession,
@@ -330,9 +330,9 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     const fields: Array<[string, string]> = [
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRF X (pc)', String(x)],
-      ['Barycentric ICRF Y (pc)', String(y)],
-      ['Barycentric ICRF Z (pc)', String(z)],
+      ['Barycentric ICRF X (pc)', formatMeasurement(x)],
+      ['Barycentric ICRF Y (pc)', formatMeasurement(y)],
+      ['Barycentric ICRF Z (pc)', formatMeasurement(z)],
       ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
     ]
     if (projectionEpoch.value !== undefined) {
@@ -344,30 +344,30 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
   const fields: Array<[string, string]> = [
     ['Gaia source ID', object.sourceId],
-    ['RA (deg)', object.ra.toFixed(8)],
-    ['Dec (deg)', object.dec.toFixed(8)],
-    ['Parallax (mas)', object.parallax.toFixed(5)],
-    ['Display distance (pc)', distanceParsecs.toPrecision(7)],
-    ['Display distance (ly)', (distanceParsecs * LIGHT_YEARS_PER_PARSEC).toPrecision(7)],
+    ['RA (deg)', formatMeasurement(object.ra)],
+    ['Dec (deg)', formatMeasurement(object.dec)],
+    ['Parallax (mas)', formatMeasurement(object.parallax)],
+    ['Display distance (pc)', formatMeasurement(distanceParsecs)],
+    ['Display distance (ly)', formatMeasurement(distanceParsecs * LIGHT_YEARS_PER_PARSEC)],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
-  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', object.parallaxError.toPrecision(5)])
+  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', formatMeasurement(object.parallaxError)])
   if (object.magnitude !== undefined && Number.isFinite(object.magnitude)) {
-    fields.push(['Mean G magnitude', object.magnitude.toFixed(4)])
-    fields.push(['Display absolute G magnitude', (object.magnitude - 5 * (Math.log10(distanceParsecs) - 1)).toFixed(4)])
+    fields.push(['Mean G magnitude', formatMeasurement(object.magnitude)])
+    fields.push(['Display absolute G magnitude', formatMeasurement(object.magnitude - 5 * (Math.log10(distanceParsecs) - 1))])
   }
-  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index (mag)', object.bpRp.toFixed(4)])
+  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index (mag)', formatMeasurement(object.bpRp)])
   if (!preferredName && object.hostNames) fields.push(['NASA host identifier(s)', object.hostNames])
   if (object.sourceCategory) fields.push(['Catalog category', object.sourceCategory])
   if (object.planetCount !== undefined && Number.isFinite(object.planetCount)) fields.push(['Confirmed planets', String(object.planetCount)])
   if (object.planetNames) fields.push(['Planet name(s)', object.planetNames])
   if (object.discoveryMethods) fields.push(['Discovery method(s)', object.discoveryMethods])
-  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', object.knownSystemDiameterAu.toPrecision(8)])
-  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
+  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)])
+  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
   if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
-  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
+  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', formatMeasurement(object.ruwe)])
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
     fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])
@@ -380,13 +380,13 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     if (projected) {
       const current = cartesianPosition(object)
       const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
-      fields.push(['Projected barycentric X (pc)', projected[0].toPrecision(10)])
-      fields.push(['Projected barycentric Y (pc)', projected[1].toPrecision(10)])
-      fields.push(['Projected barycentric Z (pc)', projected[2].toPrecision(10)])
-      fields.push(['J2016.0 to projected displacement (AU)', displacementAu.toPrecision(8)])
+      fields.push(['Projected barycentric X (pc)', formatMeasurement(projected[0])])
+      fields.push(['Projected barycentric Y (pc)', formatMeasurement(projected[1])])
+      fields.push(['Projected barycentric Z (pc)', formatMeasurement(projected[2])])
+      fields.push(['J2016.0 to projected displacement (AU)', formatMeasurement(displacementAu)])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
-      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
+      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : formatMeasurement(uncertainty)])
     }
   }
   return fields
@@ -408,15 +408,15 @@ function routeDisplay(endpoints: AtlasObject[]) {
     status: 'Overall travel distance from the displayed Gaia coordinates.',
     fields: [
       ['Stops', String(endpoints.length)],
-      ['Overall distance (ly)', lightYears.toPrecision(8)],
-      ['Overall distance (light-megaseconds)', (lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR).toPrecision(8)],
-      ['Overall distance (pc)', parsecs.toPrecision(8)],
+      ['Overall distance (ly)', formatMeasurement(lightYears)],
+      ['Overall distance (light-megaseconds)', formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)],
+      ['Overall distance (pc)', formatMeasurement(parsecs)],
     ] as Array<[string, string]>,
     hops: endpoints.slice(1).map((endpoint, index) => {
       const hopParsecs = cartesianDistance(positions[index], positions[index + 1])
       return [
         `Hop ${index + 1}: ${sourceDisplayName(endpoints[index])} → ${sourceDisplayName(endpoint)}`,
-        `${(hopParsecs * LIGHT_YEARS_PER_PARSEC).toPrecision(8)} ly · ${hopParsecs.toPrecision(8)} pc`,
+        `${formatMeasurement(hopParsecs * LIGHT_YEARS_PER_PARSEC)} ly · ${formatMeasurement(hopParsecs)} pc`,
       ] as [string, string]
     }),
   }

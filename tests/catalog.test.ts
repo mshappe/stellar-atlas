@@ -5,6 +5,7 @@ import {
   cartesianDistance,
   filterLabeledRows,
   formatDisplayName,
+  formatMeasurement,
   isWithinCartesianRadius,
   pointDistance,
   popSelectionEndpoint,
@@ -19,6 +20,14 @@ describe('formatDisplayName', () => {
   it('expands Flamsteed and Bayer designations', () => {
     expect(formatDisplayName('47 UMa')).toBe('47 Ursae Majoris')
     expect(formatDisplayName('eps Eri')).toBe('Epsilon Eridani')
+  })
+
+  describe('formatMeasurement', () => {
+    it('rounds user-visible measurements to at most three decimal places', () => {
+      expect(formatMeasurement(12.3456)).toBe('12.346')
+      expect(formatMeasurement(-12.3456)).toBe('-12.346')
+      expect(formatMeasurement(12)).toBe('12')
+    })
   })
 
   it('leaves non-designation catalog names unchanged', () => {
