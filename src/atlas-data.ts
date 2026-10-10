@@ -6,6 +6,13 @@ export const SOL: NonGaiaStar = {
   position: [1.812038087014733e-8, 6.562827081439886e-9, 1.9936420953229955e-9],
   velocity: [1.5168618133833458e-9, 1.1225114704903383e-8, 4.813011644925665e-9],
   coordinateBasis: 'JPL Horizons barycentric ICRF state at J2016.0',
+  sourceCategory: 'Solar System reference star',
+  hostIdentifier: 'Sun (JPL Horizons target 10)',
+  planetCount: 8,
+  planetNames: 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune',
+  knownSystemDiameterAu: 60.657051737015,
+  knownSystemDiameterLightSeconds: 30268.158990167936,
+  evidence: 'JPL Horizons Sun state; JPL planetary elements at J2016.0',
 }
 
 export const LIGHT_YEARS_PER_PARSEC = 3.2615637771674333

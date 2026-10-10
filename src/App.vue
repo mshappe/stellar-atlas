@@ -347,12 +347,19 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
+      ['Display distance (ly)', formatLightYears(0)],
+      ['Catalog category', object.sourceCategory],
+      ['Confirmed planets', String(object.planetCount)],
+      ['Planet name(s)', object.planetNames],
+      ['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)],
+      ['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)],
+      ['NASA host identifier(s)', object.hostIdentifier],
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
       ['Barycentric ICRF X (ly)', formatLightYears(x)],
       ['Barycentric ICRF Y (ly)', formatLightYears(y)],
       ['Barycentric ICRF Z (ly)', formatLightYears(z)],
-      ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
+      ['Evidence', object.evidence],
     ]
     if (projectionEpoch.value !== undefined) {
       fields.splice(2, 0, ['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
