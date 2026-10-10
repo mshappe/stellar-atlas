@@ -42,6 +42,14 @@ const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
 const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
+const SELECTED_SOURCE_SUMMARY_TERMS = [
+  'Display distance (ly)',
+  'Catalog category',
+  'Confirmed planets',
+  'Planet name(s)',
+  'Known planetary-system diameter (light-seconds)',
+  'NASA host identifier(s)',
+] as const
 let projectionProgressStartedAt = 0
 let projectionProgressTimer: ReturnType<typeof setTimeout> | undefined
 let catalogLoadId = 0
@@ -50,7 +58,18 @@ let candidateLoadId = 0
 let curationRequestId = 0
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
-const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
+const selectedFieldGroups = computed(() => {
+  const fields = atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : []
+  const summaryFields = SELECTED_SOURCE_SUMMARY_TERMS.flatMap((term) => {
+    const field = fields.find(([candidate]) => candidate === term)
+    return field ? [field] : []
+  })
+  const summaryTerms = new Set(summaryFields.map(([term]) => term))
+  return {
+    summaryFields,
+    detailFields: fields.filter(([term]) => !summaryTerms.has(term)),
+  }
+})
 const route = computed(() => routeDisplay(atlas.state.measurementEndpoints))
 const labelIds = computed(() => atlas.displayedLabelIds())
 const selectedGaiaSourceId = computed(() => {
@@ -472,7 +491,8 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       <aside class="sidebar">
         <SelectionPanel
           :name="selectedName"
-          :fields="selectedFields"
+          :summary-fields="selectedFieldGroups.summaryFields"
+          :detail-fields="selectedFieldGroups.detailFields"
         />
         <LabelCurationPanel
           :session="session"
