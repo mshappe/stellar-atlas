@@ -1,18 +1,20 @@
 #!/usr/bin/env python3
 """Derive a smaller exact TRAPPIST-1-centered catalog from a larger one."""
 
+import math
 import csv
 import json
 import sys
 from pathlib import Path
 
 from build_trappist_centered_catalogs import (
-    RADIUS_LIGHT_YEARS,
-    RADIUS_PARSECS,
+    LIGHT_YEARS_PER_PARSEC,
     TRAPPIST_SOURCE_ID,
-    in_volume,
     position_parsecs,
 )
+
+RADIUS_LIGHT_YEARS = 150
+RADIUS_PARSECS = RADIUS_LIGHT_YEARS / LIGHT_YEARS_PER_PARSEC
 
 
 def read_rows(path):
@@ -39,7 +41,8 @@ def main(all_input_path, focused_input_path, all_output_path, focused_output_pat
 
     filtered_all_rows = [
         row for row in all_rows
-        if (position := position_parsecs(row)) is not None and in_volume(position, center)
+        if (position := position_parsecs(row)) is not None
+        and math.dist(position, center) <= RADIUS_PARSECS
     ]
     source_ids = {row["source_id"] for row in filtered_all_rows}
     focused_fieldnames, focused_rows = read_rows(focused_input_path)

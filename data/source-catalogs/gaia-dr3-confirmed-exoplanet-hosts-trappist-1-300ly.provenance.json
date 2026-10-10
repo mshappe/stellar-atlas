@@ -78,7 +78,7 @@
     "radius_light_years": 300,
     "radius_parsecs": 91.98041813566518,
     "selection_rule": "Exact Euclidean separation in reciprocal-parallax ICRS Cartesian coordinates at J2016.0 is less than or equal to radius_parsecs.",
-    "generator": "scripts/build_trappist_centered_catalogs.py"
+    "generator": "scripts/build_trappist_centered_catalogs.py --radius-light-years 300"
   },
   "nasa_exoplanet_archive": {
     "table": "PSCompPars",
