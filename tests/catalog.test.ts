@@ -88,6 +88,13 @@ describe('searchCatalogRows', () => {
       1,
     )).toEqual([aliasMatch])
   })
+
+  it('matches expanded Bayer and Flamsteed constellation names', () => {
+    const host = { sourceId: '47-uma', hostNames: '47 UMa', planetNames: '47 UMa b' }
+
+    expect(searchCatalogRows([host], 'Ursa')).toEqual([host])
+    expect(searchCatalogRows([host], 'Majoris')).toEqual([host])
+  })
 })
 
 describe('selectedAlternativeLabelIds', () => {

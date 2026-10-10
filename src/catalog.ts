@@ -113,12 +113,16 @@ export function searchCatalogRows<T extends {
   if (!normalizedQuery || maxResults <= 0) return []
 
   return rows.map((row, index) => {
-    const aliases = [
+    const rawAliases = [
       row.hostNames,
       row.planetNames,
       displayLabels[row.sourceId],
       ...(identifierAliases[row.sourceId] ?? []),
     ]
+    const aliases = rawAliases.flatMap((identifier) => {
+      if (!identifier) return []
+      return [identifier, ...identifier.split('; ').map(formatDisplayName)]
+    })
     const aliasMatch = aliases.some((identifier) => identifier?.toLowerCase().includes(normalizedQuery))
     const sourceIdMatch = row.sourceId.toLowerCase().includes(normalizedQuery)
     return { row, index, priority: aliasMatch ? 0 : sourceIdMatch ? 1 : 2 }
