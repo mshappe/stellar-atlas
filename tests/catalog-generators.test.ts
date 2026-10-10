@@ -37,9 +37,13 @@ describe('catalog generators', () => {
     writeFileSync(broadGaia, [
       'source_id,ra,dec,parallax,parallax_error,phot_g_mean_mag,bp_rp',
       '2635476908753563008,0,0,100,0.1,12,2',
-      'near-300-only,0,0,16.6666666667,0.1,12,2',
+      '1234567890123456789,0,0,16.6666666667,0.1,12,2',
     ].join('\n'))
-    writeFileSync(planets, 'hostname,gaia_dr3_id,pl_name,discoverymethod,disc_year,sy_dist,pl_orbsmax,pl_orbeccen\n')
+    writeFileSync(planets, [
+      'hostname,gaia_dr3_id,pl_name,discoverymethod,disc_year,sy_dist,pl_orbsmax,pl_orbeccen',
+      'TRAPPIST-1,Gaia DR3 2635476908753563008,TRAPPIST-1 b,Transit,2016,12,0.01,0.1',
+      'Near 300 Only,Gaia DR3 1234567890123456789,Near 300 Only b,Transit,2020,196,0.02,0.2',
+    ].join('\n'))
 
     runPython('build_trappist_centered_catalogs.py', broadGaia, planets, defaultAll, defaultFocused)
     runPython('build_trappist_centered_catalogs.py', '--radius-light-years', '300', broadGaia, planets, sourceAll, sourceFocused)
@@ -48,5 +52,8 @@ describe('catalog generators', () => {
     expect(csvRows(sourceAll)).toHaveLength(2)
     expect(csvRows(defaultAll)).toHaveLength(1)
     expect(csvRows(runtimeAll)).toHaveLength(1)
+    expect(csvRows(sourceFocused)).toHaveLength(2)
+    expect(csvRows(defaultFocused)).toHaveLength(1)
+    expect(readFileSync(runtimeFocused, 'utf8')).toBe(readFileSync(defaultFocused, 'utf8'))
   })
 })
