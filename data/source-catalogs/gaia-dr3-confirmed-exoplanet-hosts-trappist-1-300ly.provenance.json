@@ -1,6 +1,6 @@
 {
   "purpose": "Gaia DR3 astrometric positions for confirmed exoplanet host stars and explicitly documented named reference stars in an exact 300-light-year geometric volume around TRAPPIST-1.",
-  "output_file": "gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv",
+  "output_file": "data/source-catalogs/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv",
   "output_row_count": 1000,
   "gaia": {
     "catalog": "Gaia DR3",
@@ -18,7 +18,7 @@
     "table": "gaiadr3.gaia_source",
     "endpoint": "https://gea.esac.esa.int/tap-server/tap/sync",
     "retrieved_at": "2026-10-09T15:47:15-05:00",
-    "selection": "Exact source_id values from gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv; the enrichment query returns one Gaia row for each focused catalog row.",
+    "selection": "Exact source_id values from data/source-catalogs/gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv; the enrichment query returns one Gaia row for each focused catalog row.",
     "adql_columns": [
       "source_id",
       "astrometric_params_solved",

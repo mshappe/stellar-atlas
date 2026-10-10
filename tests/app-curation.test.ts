@@ -74,7 +74,7 @@ describe('App label curation', () => {
         maintainer: false,
       }))
       if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
-      if (url.includes('gaia-dr3-trappist-1-300ly.csv')) return Promise.resolve(new Response('', { status: 503 }))
+      if (url.includes('gaia-dr3-trappist-1-150ly.csv')) return Promise.resolve(new Response('', { status: 503 }))
       throw new Error(`Unexpected request: ${url}`)
     }))
 

@@ -26,11 +26,11 @@
   "generator": "scripts/filter_trappist_catalog_radius.py",
   "limitations": [
     "This is a reciprocal-parallax display selection, not a probabilistic distance-selected census.",
-    "Gaia DR3 positions are not propagated from J2016.0 in this viewer.",
+    "This all-source catalog is displayed at Gaia DR3 J2016.0; projected epochs require the separately enriched focused catalog.",
     "Sol is a separately sourced star object from JPL Horizons, not a Gaia DR3 source record."
   ],
   "derivation": {
-    "input_file": "gaia-dr3-trappist-1-300ly.csv",
+    "input_file": "data/source-catalogs/gaia-dr3-trappist-1-300ly.csv",
     "input_row_count": 443660,
     "method": "Reapply the exact reciprocal-parallax ICRS Cartesian membership rule at the 150-light-year radius using scripts/filter_trappist_catalog_radius.py."
   }

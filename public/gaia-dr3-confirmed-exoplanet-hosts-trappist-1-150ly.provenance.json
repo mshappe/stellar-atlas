@@ -13,7 +13,7 @@
     "coordinate_frame": "ICRS",
     "astrometry_reference_epoch": "J2016.0",
     "derivation": {
-      "input_file": "gaia-dr3-trappist-1-300ly.csv",
+      "input_file": "data/source-catalogs/gaia-dr3-trappist-1-300ly.csv",
       "input_row_count": 443660,
       "method": "Reapply the exact reciprocal-parallax ICRS Cartesian membership rule at the 150-light-year radius using scripts/filter_trappist_catalog_radius.py."
     }
