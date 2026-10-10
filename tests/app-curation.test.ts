@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { BUNDLED_CATALOGS } from '../src/atlas-data'
 import type { GaiaRow } from '../src/atlas-types'
 import App from '../src/App.vue'
+import SelectionPanel from '../src/components/SelectionPanel.vue'
 
 const trappist: GaiaRow = {
   sourceId: '2635476908753563008',
@@ -54,7 +55,7 @@ function mountApp() {
         CatalogSearch: true,
         ReferenceFramePanel: true,
         RoutePanel: true,
-        SelectionPanel: true,
+        SelectionPanel,
       },
     },
   })
@@ -65,6 +66,27 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('displays selected-source distances in light-years without parsecs', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Display distance (ly)')
+    expect(wrapper.text()).not.toContain('Display distance (pc)')
+  })
+
   it('retains the active catalog selection when a replacement catalog cannot load', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)

@@ -330,9 +330,9 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     const fields: Array<[string, string]> = [
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRF X (pc)', formatMeasurement(x)],
-      ['Barycentric ICRF Y (pc)', formatMeasurement(y)],
-      ['Barycentric ICRF Z (pc)', formatMeasurement(z)],
+      ['Barycentric ICRF X (ly)', formatLightYears(x)],
+      ['Barycentric ICRF Y (ly)', formatLightYears(y)],
+      ['Barycentric ICRF Z (ly)', formatLightYears(z)],
       ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
     ]
     if (projectionEpoch.value !== undefined) {
@@ -347,8 +347,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     ['RA (deg)', formatMeasurement(object.ra)],
     ['Dec (deg)', formatMeasurement(object.dec)],
     ['Parallax (mas)', formatMeasurement(object.parallax)],
-    ['Display distance (pc)', formatMeasurement(distanceParsecs)],
-    ['Display distance (ly)', formatMeasurement(distanceParsecs * LIGHT_YEARS_PER_PARSEC)],
+    ['Display distance (ly)', formatLightYears(distanceParsecs)],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
   if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', formatMeasurement(object.parallaxError)])
@@ -380,13 +379,13 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     if (projected) {
       const current = cartesianPosition(object)
       const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
-      fields.push(['Projected barycentric X (pc)', formatMeasurement(projected[0])])
-      fields.push(['Projected barycentric Y (pc)', formatMeasurement(projected[1])])
-      fields.push(['Projected barycentric Z (pc)', formatMeasurement(projected[2])])
+      fields.push(['Projected barycentric X (ly)', formatLightYears(projected[0])])
+      fields.push(['Projected barycentric Y (ly)', formatLightYears(projected[1])])
+      fields.push(['Projected barycentric Z (ly)', formatLightYears(projected[2])])
       fields.push(['J2016.0 to projected displacement (AU)', formatMeasurement(displacementAu)])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
-      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : formatMeasurement(uncertainty)])
+      fields.push(['Projected RSS Cartesian uncertainty (ly)', uncertainty === undefined ? 'Unavailable or invalid' : formatLightYears(uncertainty)])
     }
   }
   return fields
@@ -410,13 +409,12 @@ function routeDisplay(endpoints: AtlasObject[]) {
       ['Stops', String(endpoints.length)],
       ['Overall distance (ly)', formatMeasurement(lightYears)],
       ['Overall distance (light-megaseconds)', formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)],
-      ['Overall distance (pc)', formatMeasurement(parsecs)],
     ] as Array<[string, string]>,
     hops: endpoints.slice(1).map((endpoint, index) => {
       const hopParsecs = cartesianDistance(positions[index], positions[index + 1])
       return [
         `Hop ${index + 1}: ${sourceDisplayName(endpoints[index])} → ${sourceDisplayName(endpoint)}`,
-        `${formatMeasurement(hopParsecs * LIGHT_YEARS_PER_PARSEC)} ly · ${formatMeasurement(hopParsecs)} pc`,
+        `${formatLightYears(hopParsecs)} ly`,
       ] as [string, string]
     }),
   }
@@ -438,6 +436,10 @@ function positionForObject(object: AtlasObject): [number, number, number] {
 
 function formatHostNames(hostNames: string | undefined) {
   return hostNames?.split('; ').map((name) => formatDisplayName(name)).join('; ')
+}
+
+function formatLightYears(parsecs: number) {
+  return formatMeasurement(parsecs * LIGHT_YEARS_PER_PARSEC)
 }
 
 function isNonGaiaStar(object: AtlasObject): object is typeof SOL {
@@ -539,7 +541,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       </div>
     </section>
     <footer>
-      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: parsecs</span>
+      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: light-years</span>
       <a
         href="https://exoplanetarchive.ipac.caltech.edu/"
         target="_blank"

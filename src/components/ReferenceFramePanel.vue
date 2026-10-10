@@ -1,8 +1,3 @@
-<script setup lang="ts">
-import { MAX_DISTANCE_PARSECS } from '../atlas-data'
-import { formatMeasurement } from '../catalog'
-</script>
-
 <template>
   <section>
     <h2>Reference frame</h2>
@@ -13,7 +8,7 @@ import { formatMeasurement } from '../catalog'
       <div><dt>Distance display</dt><dd>1 / parallax</dd></div>
       <div><dt>Point color</dt><dd>Gaia BP−RP index</dd></div>
       <div><dt>Point size</dt><dd>Absolute G magnitude</dd></div>
-      <div><dt>Map radius</dt><dd>150 ly / {{ formatMeasurement(MAX_DISTANCE_PARSECS) }} pc</dd></div>
+      <div><dt>Map radius</dt><dd>150 ly</dd></div>
     </dl>
     <p class="caveat">
       The cyan wire sphere marks the exact 150-ly volume around TRAPPIST-1. Colors are a visual mapping of measured BP−RP, and size is an extinction-unadjusted luminosity proxy—not physical radius or a spectral-type classification.
