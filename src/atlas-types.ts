@@ -53,6 +53,13 @@ export type NonGaiaStar = {
   position: [number, number, number]
   velocity: [number, number, number]
   coordinateBasis: 'JPL Horizons barycentric ICRF state at J2016.0'
+  sourceCategory: 'Solar System reference star'
+  hostIdentifier: 'Sun (JPL Horizons target 10)'
+  planetCount: 8
+  planetNames: 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'
+  knownSystemDiameterAu: number
+  knownSystemDiameterLightSeconds: number
+  evidence: string
 }
 
 export type AtlasObject = GaiaRow | NonGaiaStar

@@ -1,9 +1,10 @@
 // @vitest-environment jsdom
 import { flushPromises, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { BUNDLED_CATALOGS } from '../src/atlas-data'
+import { BUNDLED_CATALOGS, SOL } from '../src/atlas-data'
 import type { GaiaRow } from '../src/atlas-types'
 import App from '../src/App.vue'
+import SelectionPanel from '../src/components/SelectionPanel.vue'
 
 const trappist: GaiaRow = {
   sourceId: '2635476908753563008',
@@ -54,7 +55,7 @@ function mountApp() {
         CatalogSearch: true,
         ReferenceFramePanel: true,
         RoutePanel: true,
-        SelectionPanel: true,
+        SelectionPanel,
       },
     },
   })
@@ -65,6 +66,57 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('displays selected-source distances from the active map origin in light-years', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+
+    expect(wrapper.text()).toContain('Distance from map origin (ly)')
+    expect(wrapper.text()).not.toContain('Distance from map origin (pc)')
+    expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
+      ['Distance from map origin (ly)', '0.569'],
+    ])
+  })
+
+  it('shows Sol with the same concise system metadata as catalog stars', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', SOL)
+    await flushPromises()
+
+    expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
+      ['Distance from map origin (ly)', '32.616'],
+      ['Catalog category', 'Solar System reference star'],
+      ['Confirmed planets', '8'],
+      ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
+      ['Known planetary-system diameter (light-seconds)', '30,268.159'],
+      ['NASA host identifier(s)', 'Sun (JPL Horizons target 10)'],
+    ])
+  })
+
   it('retains the active catalog selection when a replacement catalog cannot load', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)

@@ -10,7 +10,7 @@ import ReferenceFramePanel from './components/ReferenceFramePanel.vue'
 import RoutePanel from './components/RoutePanel.vue'
 import SelectionPanel from './components/SelectionPanel.vue'
 import { useAtlasState } from './composables/useAtlasState'
-import { cartesianDistance, cartesianPosition, formatDisplayName, routeDistanceFromPositions } from './catalog'
+import { cartesianDistance, cartesianPosition, formatDisplayName, formatMeasurement, routeDistanceFromPositions } from './catalog'
 import {
   createPersistentLabel,
   loadAtlasSession,
@@ -42,6 +42,14 @@ const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
 const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
+const SELECTED_SOURCE_SUMMARY_TERMS = [
+  'Distance from map origin (ly)',
+  'Catalog category',
+  'Confirmed planets',
+  'Planet name(s)',
+  'Known planetary-system diameter (light-seconds)',
+  'NASA host identifier(s)',
+] as const
 let projectionProgressStartedAt = 0
 let projectionProgressTimer: ReturnType<typeof setTimeout> | undefined
 let catalogLoadId = 0
@@ -50,7 +58,18 @@ let candidateLoadId = 0
 let curationRequestId = 0
 
 const selectedName = computed(() => atlas.state.selectedObject && sourceDisplayName(atlas.state.selectedObject))
-const selectedFields = computed(() => atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : [])
+const selectedFieldGroups = computed(() => {
+  const fields = atlas.state.selectedObject ? selectionFields(atlas.state.selectedObject) : []
+  const summaryFields = SELECTED_SOURCE_SUMMARY_TERMS.flatMap((term) => {
+    const field = fields.find(([candidate]) => candidate === term)
+    return field ? [field] : []
+  })
+  const summaryTerms = new Set(summaryFields.map(([term]) => term))
+  return {
+    summaryFields,
+    detailFields: fields.filter(([term]) => !summaryTerms.has(term)),
+  }
+})
 const route = computed(() => routeDisplay(atlas.state.measurementEndpoints))
 const labelIds = computed(() => atlas.displayedLabelIds())
 const selectedGaiaSourceId = computed(() => {
@@ -324,16 +343,27 @@ function searchableIdentifiers(object: AtlasObject) {
 }
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
+  const distanceFromMapOrigin = formatLightYears(cartesianDistance(
+    positionForObject(object),
+    positionForObject(atlas.state.selectedOrigin),
+  ))
   if (isNonGaiaStar(object)) {
     const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
+      ['Distance from map origin (ly)', distanceFromMapOrigin],
+      ['Catalog category', object.sourceCategory],
+      ['Confirmed planets', String(object.planetCount)],
+      ['Planet name(s)', object.planetNames],
+      ['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)],
+      ['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)],
+      ['NASA host identifier(s)', object.hostIdentifier],
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRF X (pc)', String(x)],
-      ['Barycentric ICRF Y (pc)', String(y)],
-      ['Barycentric ICRF Z (pc)', String(z)],
-      ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
+      ['Barycentric ICRF X (ly)', formatLightYears(x)],
+      ['Barycentric ICRF Y (ly)', formatLightYears(y)],
+      ['Barycentric ICRF Z (ly)', formatLightYears(z)],
+      ['Evidence', object.evidence],
     ]
     if (projectionEpoch.value !== undefined) {
       fields.splice(2, 0, ['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
@@ -344,30 +374,29 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
   const fields: Array<[string, string]> = [
     ['Gaia source ID', object.sourceId],
-    ['RA (deg)', object.ra.toFixed(8)],
-    ['Dec (deg)', object.dec.toFixed(8)],
-    ['Parallax (mas)', object.parallax.toFixed(5)],
-    ['Display distance (pc)', distanceParsecs.toPrecision(7)],
-    ['Display distance (ly)', (distanceParsecs * LIGHT_YEARS_PER_PARSEC).toPrecision(7)],
+    ['RA (deg)', formatMeasurement(object.ra)],
+    ['Dec (deg)', formatMeasurement(object.dec)],
+    ['Parallax (mas)', formatMeasurement(object.parallax)],
+    ['Distance from map origin (ly)', distanceFromMapOrigin],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
-  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', object.parallaxError.toPrecision(5)])
+  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', formatMeasurement(object.parallaxError)])
   if (object.magnitude !== undefined && Number.isFinite(object.magnitude)) {
-    fields.push(['Mean G magnitude', object.magnitude.toFixed(4)])
-    fields.push(['Display absolute G magnitude', (object.magnitude - 5 * (Math.log10(distanceParsecs) - 1)).toFixed(4)])
+    fields.push(['Mean G magnitude', formatMeasurement(object.magnitude)])
+    fields.push(['Display absolute G magnitude', formatMeasurement(object.magnitude - 5 * (Math.log10(distanceParsecs) - 1))])
   }
-  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index (mag)', object.bpRp.toFixed(4)])
+  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index (mag)', formatMeasurement(object.bpRp)])
   if (!preferredName && object.hostNames) fields.push(['NASA host identifier(s)', object.hostNames])
   if (object.sourceCategory) fields.push(['Catalog category', object.sourceCategory])
   if (object.planetCount !== undefined && Number.isFinite(object.planetCount)) fields.push(['Confirmed planets', String(object.planetCount)])
   if (object.planetNames) fields.push(['Planet name(s)', object.planetNames])
   if (object.discoveryMethods) fields.push(['Discovery method(s)', object.discoveryMethods])
-  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', object.knownSystemDiameterAu.toPrecision(8)])
-  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
+  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)])
+  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
   if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
-  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
+  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', formatMeasurement(object.ruwe)])
   if (projectionEpoch.value !== undefined) {
     fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
     fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])
@@ -380,13 +409,13 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     if (projected) {
       const current = cartesianPosition(object)
       const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
-      fields.push(['Projected barycentric X (pc)', projected[0].toPrecision(10)])
-      fields.push(['Projected barycentric Y (pc)', projected[1].toPrecision(10)])
-      fields.push(['Projected barycentric Z (pc)', projected[2].toPrecision(10)])
-      fields.push(['J2016.0 to projected displacement (AU)', displacementAu.toPrecision(8)])
+      fields.push(['Projected barycentric X (ly)', formatLightYears(projected[0])])
+      fields.push(['Projected barycentric Y (ly)', formatLightYears(projected[1])])
+      fields.push(['Projected barycentric Z (ly)', formatLightYears(projected[2])])
+      fields.push(['J2016.0 to projected displacement (AU)', formatMeasurement(displacementAu)])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
-      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
+      fields.push(['Projected RSS Cartesian uncertainty (ly)', uncertainty === undefined ? 'Unavailable or invalid' : formatLightYears(uncertainty)])
     }
   }
   return fields
@@ -408,15 +437,14 @@ function routeDisplay(endpoints: AtlasObject[]) {
     status: 'Overall travel distance from the displayed Gaia coordinates.',
     fields: [
       ['Stops', String(endpoints.length)],
-      ['Overall distance (ly)', lightYears.toPrecision(8)],
-      ['Overall distance (light-megaseconds)', (lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR).toPrecision(8)],
-      ['Overall distance (pc)', parsecs.toPrecision(8)],
+      ['Overall distance (ly)', formatMeasurement(lightYears)],
+      ['Overall distance (light-megaseconds)', formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)],
     ] as Array<[string, string]>,
     hops: endpoints.slice(1).map((endpoint, index) => {
       const hopParsecs = cartesianDistance(positions[index], positions[index + 1])
       return [
         `Hop ${index + 1}: ${sourceDisplayName(endpoints[index])} → ${sourceDisplayName(endpoint)}`,
-        `${(hopParsecs * LIGHT_YEARS_PER_PARSEC).toPrecision(8)} ly · ${hopParsecs.toPrecision(8)} pc`,
+        `${formatLightYears(hopParsecs)} ly`,
       ] as [string, string]
     }),
   }
@@ -438,6 +466,10 @@ function positionForObject(object: AtlasObject): [number, number, number] {
 
 function formatHostNames(hostNames: string | undefined) {
   return hostNames?.split('; ').map((name) => formatDisplayName(name)).join('; ')
+}
+
+function formatLightYears(parsecs: number) {
+  return formatMeasurement(parsecs * LIGHT_YEARS_PER_PARSEC)
 }
 
 function isNonGaiaStar(object: AtlasObject): object is typeof SOL {
@@ -470,7 +502,8 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       <aside class="sidebar">
         <SelectionPanel
           :name="selectedName"
-          :fields="selectedFields"
+          :summary-fields="selectedFieldGroups.summaryFields"
+          :detail-fields="selectedFieldGroups.detailFields"
         />
         <LabelCurationPanel
           :session="session"
@@ -539,7 +572,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       </div>
     </section>
     <footer>
-      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: parsecs</span>
+      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: light-years</span>
       <a
         href="https://exoplanetarchive.ipac.caltech.edu/"
         target="_blank"

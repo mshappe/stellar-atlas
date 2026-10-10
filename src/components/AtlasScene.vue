@@ -3,10 +3,11 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js'
-import { LIGHT_YEARS_PER_PARSEC, MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
+import { DEFAULT_VIEW_RADIUS_PARSECS, LIGHT_YEARS_PER_PARSEC, MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
-import { cartesianPosition, relativeCartesianPosition } from '../catalog'
+import { cartesianPosition, formatMeasurement, relativeCartesianPosition } from '../catalog'
 import { pickClosestScreenPoint } from '../scene-picking'
+import { cameraDistanceForViewRadius } from '../scene-view'
 import { GAIA_REFERENCE_EPOCH, propagateGaiaPosition } from '../space-motion'
 
 const props = defineProps<{
@@ -67,8 +68,8 @@ let starLabels: THREE.Group | undefined
 onMounted(() => {
   if (!sceneElement.value) return
   initializeScene(sceneElement.value)
-  renderCatalog()
   resizeRenderer()
+  renderCatalog()
   render()
 })
 
@@ -202,8 +203,7 @@ function updateFieldOfView() {
 }
 
 function formatFieldDimension(parsecs: number) {
-  const lightYears = parsecs * LIGHT_YEARS_PER_PARSEC
-  return lightYears >= 100 ? `${lightYears.toFixed(0)} ly` : `${lightYears.toPrecision(3)} ly`
+  return `${formatMeasurement(parsecs * LIGHT_YEARS_PER_PARSEC)} ly`
 }
 
 function render() {
@@ -276,8 +276,8 @@ function renderCatalog(resetCamera = true) {
   renderMotionTrails(visibleCatalogRows())
 
   if (resetCamera) {
-    const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
-    camera.position.set(framingDistance, framingDistance * 0.65, framingDistance * 0.45)
+    const cameraDistance = cameraDistanceForViewRadius(DEFAULT_VIEW_RADIUS_PARSECS, camera.fov, camera.aspect)
+    camera.position.set(1, 0.65, 0.45).normalize().multiplyScalar(cameraDistance)
     camera.near = Math.max(farthest / 1e7, 0.00001)
     camera.far = Math.max(farthest * 10, 100)
     camera.updateProjectionMatrix()

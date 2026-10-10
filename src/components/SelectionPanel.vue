@@ -1,8 +1,21 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+
 defineProps<{
   name?: string
-  fields: Array<[string, string]>
+  summaryFields: Array<[string, string]>
+  detailFields: Array<[string, string]>
 }>()
+
+const detailsDialog = ref<HTMLDialogElement>()
+
+function openDetails() {
+  detailsDialog.value?.showModal()
+}
+
+function closeDetails() {
+  detailsDialog.value?.close()
+}
 </script>
 
 <template>
@@ -15,12 +28,46 @@ defineProps<{
     </h2>
     <dl>
       <div
-        v-for="[term, detail] in fields"
+        v-for="[term, detail] in summaryFields"
         :key="term"
       >
         <dt>{{ term }}</dt>
         <dd>{{ detail }}</dd>
       </div>
     </dl>
+    <button
+      v-if="detailFields.length"
+      class="selection-details-link"
+      type="button"
+      @click="openDetails"
+    >
+      Details
+    </button>
+    <dialog
+      v-if="detailFields.length"
+      ref="detailsDialog"
+      class="selection-details-dialog"
+      :aria-label="`${name} details`"
+    >
+      <div class="selection-details-header">
+        <h2>Details</h2>
+        <button
+          class="selection-details-close"
+          type="button"
+          @click="closeDetails"
+        >
+          Close
+        </button>
+      </div>
+      <dl>
+        <div
+          v-for="[term, detail] in detailFields"
+          :key="term"
+        >
+          <dt>{{ term }}</dt>
+          <dd>{{ detail }}</dd>
+        </div>
+      </dl>
+    </dialog>
   </section>
 </template>

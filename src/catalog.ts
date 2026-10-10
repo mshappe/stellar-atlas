@@ -56,6 +56,11 @@ const CONSTELLATION_GENITIVES: Record<string, string> = {
   TrA: 'Trianguli Australis', Tri: 'Trianguli', Tuc: 'Tucanae', UMa: 'Ursae Majoris',
   UMi: 'Ursae Minoris', Vel: 'Velorum', Vir: 'Virginis', Vol: 'Volantis', Vul: 'Vulpeculae',
 }
+const MEASUREMENT_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 })
+const SMALL_MEASUREMENT_FORMATTER = new Intl.NumberFormat('en-US', {
+  notation: 'scientific',
+  maximumSignificantDigits: 3,
+})
 
 export function cartesianPosition({ ra, dec, parallax }: AstrometricPosition): [number, number, number] {
   const distanceParsecs = 1000 / parallax
@@ -113,12 +118,16 @@ export function searchCatalogRows<T extends {
   if (!normalizedQuery || maxResults <= 0) return []
 
   return rows.map((row, index) => {
-    const aliases = [
+    const rawAliases = [
       row.hostNames,
       row.planetNames,
       displayLabels[row.sourceId],
       ...(identifierAliases[row.sourceId] ?? []),
     ]
+    const aliases = rawAliases.flatMap((identifier) => {
+      if (!identifier) return []
+      return [identifier, ...identifier.split('; ').map(formatDisplayName)]
+    })
     const aliasMatch = aliases.some((identifier) => identifier?.toLowerCase().includes(normalizedQuery))
     const sourceIdMatch = row.sourceId.toLowerCase().includes(normalizedQuery)
     return { row, index, priority: aliasMatch ? 0 : sourceIdMatch ? 1 : 2 }
@@ -159,4 +168,10 @@ export function formatDisplayName(name: string) {
   const constellation = CONSTELLATION_GENITIVES[abbreviation]
   if (!constellation) return name
   return `${GREEK_DESIGNATIONS[designation.toLowerCase()] ?? designation} ${constellation}${component}`
+}
+
+export function formatMeasurement(value: number) {
+  return value !== 0 && Math.abs(value) < 0.001
+    ? SMALL_MEASUREMENT_FORMATTER.format(value)
+    : MEASUREMENT_FORMATTER.format(value)
 }

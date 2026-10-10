@@ -41,7 +41,30 @@
         "REF_SYSTEM": "ICRF",
         "CSV_FORMAT": "YES"
       },
-      "conversion": "position_parsecs = astronomical_units / 206264.80624709636; velocity_parsecs_per_julian_year = astronomical_units_per_day × 365.25 / 206264.80624709636"
+      "conversion": "position_parsecs = astronomical_units / 206264.80624709636; velocity_parsecs_per_julian_year = astronomical_units_per_day × 365.25 / 206264.80624709636",
+      "planetary_system": {
+        "source": "JPL Solar System Dynamics, Approximate Positions of the Planets",
+        "source_url": "https://ssd.jpl.nasa.gov/planets/approx_pos.html",
+        "epoch": "J2016.0",
+        "planet_count": 8,
+        "planets": [
+          "Mercury",
+          "Venus",
+          "Earth",
+          "Mars",
+          "Jupiter",
+          "Saturn",
+          "Uranus",
+          "Neptune"
+        ],
+        "system_identifier": "Sun (JPL Horizons target 10)",
+        "diameter_definition": "Twice Neptune's J2016.0 apoastron: 2 × a × (1 + e).",
+        "neptune_semimajor_axis_au": 30.0699648256,
+        "neptune_eccentricity": 0.008598648,
+        "diameter_au": 60.657051737015,
+        "diameter_light_seconds": 30268.158990167936,
+        "light_second_conversion": "499.0047838361564 seconds per astronomical unit"
+      }
     }
   ]
 }

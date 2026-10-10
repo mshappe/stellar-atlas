@@ -5,6 +5,7 @@ import {
   cartesianDistance,
   filterLabeledRows,
   formatDisplayName,
+  formatMeasurement,
   isWithinCartesianRadius,
   pointDistance,
   popSelectionEndpoint,
@@ -19,6 +20,19 @@ describe('formatDisplayName', () => {
   it('expands Flamsteed and Bayer designations', () => {
     expect(formatDisplayName('47 UMa')).toBe('47 Ursae Majoris')
     expect(formatDisplayName('eps Eri')).toBe('Epsilon Eridani')
+  })
+
+  describe('formatMeasurement', () => {
+    it('rounds user-visible measurements to at most three decimal places', () => {
+      expect(formatMeasurement(12.3456)).toBe('12.346')
+      expect(formatMeasurement(-12.3456)).toBe('-12.346')
+      expect(formatMeasurement(12)).toBe('12')
+    })
+
+    it('uses scientific notation for nonzero values below three-decimal precision', () => {
+      expect(formatMeasurement(0.0004)).toBe('4E-4')
+      expect(formatMeasurement(-0.0004)).toBe('-4E-4')
+    })
   })
 
   it('leaves non-designation catalog names unchanged', () => {
@@ -78,6 +92,13 @@ describe('searchCatalogRows', () => {
       { '456': ['Wolf 1069'] },
       1,
     )).toEqual([aliasMatch])
+  })
+
+  it('matches expanded Bayer and Flamsteed constellation names', () => {
+    const host = { sourceId: '47-uma', hostNames: '47 UMa', planetNames: '47 UMa b' }
+
+    expect(searchCatalogRows([host], 'Ursa')).toEqual([host])
+    expect(searchCatalogRows([host], 'Majoris')).toEqual([host])
   })
 })
 
