@@ -16,6 +16,29 @@ export type GaiaRow = {
   knownSystemDiameterAu?: number
   knownSystemDiameterLightSeconds?: number
   sourceCategory?: string
+  astrometricParamsSolved?: number
+  pmra?: number
+  pmraError?: number
+  pmdec?: number
+  pmdecError?: number
+  radialVelocity?: number
+  radialVelocityError?: number
+  radialVelocitySource?: string
+  radialVelocityQuality?: string
+  radialVelocityBibliographyCode?: string
+  ruwe?: number
+  duplicatedSource?: boolean
+  nssTables?: string
+  raDecCorrelation?: number
+  raParallaxCorrelation?: number
+  raPmraCorrelation?: number
+  raPmdecCorrelation?: number
+  decParallaxCorrelation?: number
+  decPmraCorrelation?: number
+  decPmdecCorrelation?: number
+  parallaxPmraCorrelation?: number
+  parallaxPmdecCorrelation?: number
+  pmraPmdecCorrelation?: number
 }
 
 export type ParsedCatalog = {
@@ -28,7 +51,8 @@ export type NonGaiaStar = {
   sourceId: 'sol'
   name: 'Sol'
   position: [number, number, number]
-  coordinateBasis: 'JPL Horizons barycentric ICRS position at J2016.0'
+  velocity: [number, number, number]
+  coordinateBasis: 'JPL Horizons barycentric ICRF state at J2016.0'
 }
 
 export type AtlasObject = GaiaRow | NonGaiaStar

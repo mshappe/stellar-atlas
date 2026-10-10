@@ -1,0 +1,339 @@
+{
+  "purpose": "Cited SIMBAD radial-velocity supplements for focused Gaia DR3 sources without Gaia DR3 radial velocities.",
+  "source": {
+    "catalog": "SIMBAD basic table",
+    "endpoint": "https://simbad.cds.unistra.fr/simbad/sim-tap/sync",
+    "retrieved_at": "2026-10-09T17:04:29-05:00",
+    "selection": "Exact Gaia DR3 identifiers for focused catalog sources missing Gaia radial_velocity or radial_velocity_error."
+  },
+  "records": [
+    {
+      "gaia_dr3_source_id": "35227046884571776",
+      "main_id": "NAME Teegarden's Star",
+      "radial_velocity_km_s": 63.0,
+      "radial_velocity_error_km_s": 5.0,
+      "quality": "C",
+      "bibliography_code": "2014AJ....147...20N"
+    },
+    {
+      "gaia_dr3_source_id": "48026706558487040",
+      "main_id": "* eps Tau",
+      "radial_velocity_km_s": 38.42,
+      "radial_velocity_error_km_s": 0.0004,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "114340658009875072",
+      "main_id": "HD  17607",
+      "radial_velocity_km_s": 25.04,
+      "radial_velocity_error_km_s": 0.94,
+      "quality": "B",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "412783469966211456",
+      "main_id": "BD+55   362",
+      "radial_velocity_km_s": -25.51,
+      "radial_velocity_error_km_s": 0.57,
+      "quality": "A",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "643819484617141504",
+      "main_id": "* mu. Leo",
+      "radial_velocity_km_s": 13.647,
+      "radial_velocity_error_km_s": 0.001,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "796443724462555904",
+      "main_id": "LP  261-75",
+      "radial_velocity_km_s": 10.2,
+      "radial_velocity_error_km_s": 0.2,
+      "quality": "A",
+      "bibliography_code": "2012ApJ...758...56S"
+    },
+    {
+      "gaia_dr3_source_id": "1041808368494264576",
+      "main_id": "* omi UMa",
+      "radial_velocity_km_s": 19.8,
+      "radial_velocity_error_km_s": 0.2,
+      "quality": "A",
+      "bibliography_code": "2006AstL...32..759G"
+    },
+    {
+      "gaia_dr3_source_id": "1220404653534258816",
+      "main_id": "* eps CrB",
+      "radial_velocity_km_s": -32.42,
+      "radial_velocity_error_km_s": 0.07,
+      "quality": "A",
+      "bibliography_code": "2005A&A...430..165F"
+    },
+    {
+      "gaia_dr3_source_id": "1380293091823646720",
+      "main_id": "LP  224-38",
+      "radial_velocity_km_s": -41.159,
+      "radial_velocity_error_km_s": 0.027298,
+      "quality": "A",
+      "bibliography_code": "2020AJ....160..120J"
+    },
+    {
+      "gaia_dr3_source_id": "1614731957531452544",
+      "main_id": "* iot Dra",
+      "radial_velocity_km_s": -10.912,
+      "radial_velocity_error_km_s": 0.001,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "1651268763282397312",
+      "main_id": "* psi01 Dra B",
+      "radial_velocity_km_s": -11.0,
+      "radial_velocity_error_km_s": 0.18,
+      "quality": "A",
+      "bibliography_code": "2020ApJS..248...19T"
+    },
+    {
+      "gaia_dr3_source_id": "1926476042681491712",
+      "main_id": "* kap And",
+      "radial_velocity_km_s": -12.7,
+      "radial_velocity_error_km_s": 0.8,
+      "quality": "A",
+      "bibliography_code": "2006AstL...32..759G"
+    },
+    {
+      "gaia_dr3_source_id": "2044341077844180736",
+      "main_id": "HD 178911B",
+      "radial_velocity_km_s": -40.324,
+      "radial_velocity_error_km_s": 0.0012,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "2101449265111030912",
+      "main_id": "Kepler-1582",
+      "radial_velocity_km_s": -12.673,
+      "radial_velocity_error_km_s": 3.7,
+      "quality": "C",
+      "bibliography_code": "2019ApJ...883..175Y"
+    },
+    {
+      "gaia_dr3_source_id": "2168280502430898944",
+      "main_id": "LSPM J2041+4938",
+      "radial_velocity_km_s": -51.47,
+      "radial_velocity_error_km_s": 0.0221,
+      "quality": "A",
+      "bibliography_code": "2018MNRAS.475.1960F"
+    },
+    {
+      "gaia_dr3_source_id": "2265154211335825152",
+      "main_id": "G 261-1",
+      "radial_velocity_km_s": -21.4683,
+      "radial_velocity_error_km_s": 0.0943,
+      "quality": "A",
+      "bibliography_code": "2022ApJS..259...35A"
+    },
+    {
+      "gaia_dr3_source_id": "2281778105594488192",
+      "main_id": "* gam Cep",
+      "radial_velocity_km_s": -43.668,
+      "radial_velocity_error_km_s": 0.0002,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "2329387852426700800",
+      "main_id": "LP  934-5",
+      "radial_velocity_km_s": 7.8,
+      "radial_velocity_error_km_s": 1.0,
+      "quality": "B",
+      "bibliography_code": "2021AJ....161...13W"
+    },
+    {
+      "gaia_dr3_source_id": "2358524597030794112",
+      "main_id": "V* YZ Cet",
+      "radial_velocity_km_s": 28.27,
+      "radial_velocity_error_km_s": 0.0008,
+      "quality": "A",
+      "bibliography_code": "2018MNRAS.475.1960F"
+    },
+    {
+      "gaia_dr3_source_id": "2452378776434477184",
+      "main_id": "* tau Cet",
+      "radial_velocity_km_s": -16.597,
+      "radial_velocity_error_km_s": 0.0002,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "2528453161326406016",
+      "main_id": "LP  645-50",
+      "radial_velocity_km_s": -29.5,
+      "radial_velocity_error_km_s": 0.1,
+      "quality": "A",
+      "bibliography_code": "2024AJ....167..289H"
+    },
+    {
+      "gaia_dr3_source_id": "2635476908753563008",
+      "main_id": "TRAPPIST-1",
+      "radial_velocity_km_s": -52.003101,
+      "radial_velocity_error_km_s": 0.134416,
+      "quality": "A",
+      "bibliography_code": "2020AJ....160..120J"
+    },
+    {
+      "gaia_dr3_source_id": "2658974606111711488",
+      "main_id": "* gam Psc",
+      "radial_velocity_km_s": -14.48,
+      "radial_velocity_error_km_s": 0.03,
+      "quality": "A",
+      "bibliography_code": "2018A&A...615A..31D"
+    },
+    {
+      "gaia_dr3_source_id": "2939555954755196160",
+      "main_id": "* nu.02 CMa",
+      "radial_velocity_km_s": 2.57,
+      "radial_velocity_error_km_s": 0.14,
+      "quality": "A",
+      "bibliography_code": "2015A&A...574A..50J"
+    },
+    {
+      "gaia_dr3_source_id": "3205095125321700480",
+      "main_id": "*  51 Eri",
+      "radial_velocity_km_s": 12.6,
+      "radial_velocity_error_km_s": 0.3,
+      "quality": "A",
+      "bibliography_code": "2006AstL...32..759G"
+    },
+    {
+      "gaia_dr3_source_id": "3459372646830687104",
+      "main_id": "TWA 27",
+      "radial_velocity_km_s": 7.5,
+      "radial_velocity_error_km_s": 2.0,
+      "quality": "B",
+      "bibliography_code": "2010ApJ...715L.165R"
+    },
+    {
+      "gaia_dr3_source_id": "3704342295607157120",
+      "main_id": "* del Vir",
+      "radial_velocity_km_s": -18.87,
+      "radial_velocity_error_km_s": 0.21,
+      "quality": "A",
+      "bibliography_code": "2005A&A...430..165F"
+    },
+    {
+      "gaia_dr3_source_id": "3796072592206250624",
+      "main_id": "Ross  128",
+      "radial_velocity_km_s": -30.66,
+      "radial_velocity_error_km_s": 0.0005,
+      "quality": "A",
+      "bibliography_code": "2018MNRAS.475.1960F"
+    },
+    {
+      "gaia_dr3_source_id": "4164319171172759040",
+      "main_id": "* nu. Oph",
+      "radial_velocity_km_s": 13.19,
+      "radial_velocity_error_km_s": 0.04,
+      "quality": "A",
+      "bibliography_code": "2015A&A...574A..50J"
+    },
+    {
+      "gaia_dr3_source_id": "4233021433662981760",
+      "main_id": "BD+03  4397A",
+      "radial_velocity_km_s": 0.57,
+      "radial_velocity_error_km_s": 0.23,
+      "quality": "A",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "4429785739602747392",
+      "main_id": "* alf Ser",
+      "radial_velocity_km_s": 2.63,
+      "radial_velocity_error_km_s": 0.16,
+      "quality": "A",
+      "bibliography_code": "2005A&A...430..165F"
+    },
+    {
+      "gaia_dr3_source_id": "5164707970261890560",
+      "main_id": "* eps Eri",
+      "radial_velocity_km_s": 16.376,
+      "radial_velocity_error_km_s": 0.0001,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "5183875103632956032",
+      "main_id": "2MASS J02495639-0557352",
+      "radial_velocity_km_s": 14.42,
+      "radial_velocity_error_km_s": 0.44,
+      "quality": "A",
+      "bibliography_code": "2017AJ....154...69S"
+    },
+    {
+      "gaia_dr3_source_id": "5212899427468919296",
+      "main_id": "HD  55820",
+      "radial_velocity_km_s": 27.2808,
+      "radial_velocity_error_km_s": 0.010119,
+      "quality": "A",
+      "bibliography_code": "2020AJ....160..120J"
+    },
+    {
+      "gaia_dr3_source_id": "5214002100193281920",
+      "main_id": "HD  68402",
+      "radial_velocity_km_s": 11.6,
+      "radial_velocity_error_km_s": 0.49,
+      "quality": "A",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "5357465071731312768",
+      "main_id": "L  248-27",
+      "radial_velocity_km_s": 70.48,
+      "radial_velocity_error_km_s": 0.54,
+      "quality": "A",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "5514929155583865216",
+      "main_id": "DENIS J082303.1-491201",
+      "radial_velocity_km_s": 13.0,
+      "radial_velocity_error_km_s": 2.0,
+      "quality": "B",
+      "bibliography_code": "2015ApJS..220...18B"
+    },
+    {
+      "gaia_dr3_source_id": "5957920668132624256",
+      "main_id": "HD 162020",
+      "radial_velocity_km_s": -26.55,
+      "radial_velocity_error_km_s": 2.3,
+      "quality": "C",
+      "bibliography_code": "2018yCat.1345....0G"
+    },
+    {
+      "gaia_dr3_source_id": "5982775854377691136",
+      "main_id": "HD 330075",
+      "radial_velocity_km_s": 61.204,
+      "radial_velocity_error_km_s": 0.0008,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    },
+    {
+      "gaia_dr3_source_id": "6265374394490973184",
+      "main_id": "* gam Lib",
+      "radial_velocity_km_s": -26.71,
+      "radial_velocity_error_km_s": 0.04,
+      "quality": "A",
+      "bibliography_code": "2015A&A...574A..50J"
+    },
+    {
+      "gaia_dr3_source_id": "6475212134196589952",
+      "main_id": "HD 194490",
+      "radial_velocity_km_s": -10.177,
+      "radial_velocity_error_km_s": 0.0007,
+      "quality": "A",
+      "bibliography_code": "2018A&A...616A...7S"
+    }
+  ]
+}

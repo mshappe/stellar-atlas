@@ -17,6 +17,11 @@ export function parseGaiaCsv(text: string): ParsedCatalog {
     const value = values[column(name)]
     return value?.trim() || undefined
   }
+  const optionalBoolean = (name: string, values: string[]) => {
+    const value = values[column(name)]?.trim().toLowerCase()
+    if (!value) return undefined
+    return value === 'true' ? true : value === 'false' ? false : undefined
+  }
   const rows: GaiaRow[] = []
   let rejected = 0
   for (const values of matrix.slice(1)) {
@@ -39,6 +44,29 @@ export function parseGaiaCsv(text: string): ParsedCatalog {
       knownSystemDiameterAu: optional('known_system_diameter_au', values),
       knownSystemDiameterLightSeconds: optional('known_system_diameter_light_seconds', values),
       sourceCategory: optionalText('source_category', values),
+      astrometricParamsSolved: optional('astrometric_params_solved', values),
+      pmra: optional('pmra', values),
+      pmraError: optional('pmra_error', values),
+      pmdec: optional('pmdec', values),
+      pmdecError: optional('pmdec_error', values),
+      radialVelocity: optional('radial_velocity', values),
+      radialVelocityError: optional('radial_velocity_error', values),
+      radialVelocitySource: optionalText('radial_velocity_source', values),
+      radialVelocityQuality: optionalText('radial_velocity_quality', values),
+      radialVelocityBibliographyCode: optionalText('radial_velocity_bibliography_code', values),
+      ruwe: optional('ruwe', values),
+      duplicatedSource: optionalBoolean('duplicated_source', values),
+      nssTables: optionalText('nss_tables', values),
+      raDecCorrelation: optional('ra_dec_corr', values),
+      raParallaxCorrelation: optional('ra_parallax_corr', values),
+      raPmraCorrelation: optional('ra_pmra_corr', values),
+      raPmdecCorrelation: optional('ra_pmdec_corr', values),
+      decParallaxCorrelation: optional('dec_parallax_corr', values),
+      decPmraCorrelation: optional('dec_pmra_corr', values),
+      decPmdecCorrelation: optional('dec_pmdec_corr', values),
+      parallaxPmraCorrelation: optional('parallax_pmra_corr', values),
+      parallaxPmdecCorrelation: optional('parallax_pmdec_corr', values),
+      pmraPmdecCorrelation: optional('pmra_pmdec_corr', values),
     }
     if (!row.sourceId || !Number.isFinite(row.ra) || !Number.isFinite(row.dec) || !Number.isFinite(row.parallax) || row.parallax <= 0) {
       rejected += 1

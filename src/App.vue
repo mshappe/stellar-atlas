@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, SOL } from './atlas-data'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { BUNDLED_CATALOGS, LIGHT_MEGASECONDS_PER_LIGHT_YEAR, LIGHT_YEARS_PER_PARSEC, MAXIMUM_PROJECTION_EPOCH, MINIMUM_PROJECTION_EPOCH, SOL } from './atlas-data'
 import type { AtlasObject, CatalogKey, GaiaRow } from './atlas-types'
 import AtlasScene from './components/AtlasScene.vue'
 import CatalogControls from './components/CatalogControls.vue'
@@ -21,6 +21,7 @@ import {
 } from './label-api'
 import { addPersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
+import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, projectedPositionUncertaintyParsecs, propagateGaiaPosition } from './space-motion'
 
 const atlas = useAtlasState()
 const scene = ref<InstanceType<typeof AtlasScene>>()
@@ -37,7 +38,12 @@ const isLoadingCandidates = ref(false)
 const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
-const selectedBundledCatalogKey = ref<CatalogKey | undefined>('confirmed-hosts')
+const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
+const projectionEpoch = ref<number | undefined>()
+const projectionRendering = ref(false)
+const MINIMUM_PROJECTION_PROGRESS_MS = 300
+let projectionProgressStartedAt = 0
+let projectionProgressTimer: ReturnType<typeof setTimeout> | undefined
 let catalogLoadId = 0
 let labelCatalogLoadId = 0
 let candidateLoadId = 0
@@ -56,11 +62,47 @@ const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
+const projectedSourceCount = computed(() => projectionEpoch.value === undefined
+  ? undefined
+  : (atlas.state.activeCatalog?.rows.filter(hasMeasuredSixDimensionalState).length ?? 0))
+
+function setProjectionEpoch(epoch: number | undefined) {
+  if (epoch !== undefined && !atlas.state.activeFocusedCatalog) return
+  if (epoch !== undefined && (!Number.isFinite(epoch) || epoch < MINIMUM_PROJECTION_EPOCH || epoch > MAXIMUM_PROJECTION_EPOCH)) return
+  if (projectionEpoch.value === epoch) return
+  const enteringProjectedMode = projectionEpoch.value === undefined && epoch !== undefined
+  if (projectionProgressTimer !== undefined) {
+    clearTimeout(projectionProgressTimer)
+    projectionProgressTimer = undefined
+  }
+  projectionEpoch.value = epoch
+  projectionRendering.value = true
+  projectionProgressStartedAt = performance.now()
+  if (enteringProjectedMode) {
+    resetSearch()
+    if (atlas.state.selectedObject && isGaiaRow(atlas.state.selectedObject) && !hasMeasuredSixDimensionalState(atlas.state.selectedObject)) {
+      atlas.clearSelectedObject()
+    }
+  }
+  atlas.clearRoute()
+}
+
+function finishProjectionRender() {
+  const remaining = Math.max(0, MINIMUM_PROJECTION_PROGRESS_MS - (performance.now() - projectionProgressStartedAt))
+  projectionProgressTimer = setTimeout(() => {
+    projectionRendering.value = false
+    projectionProgressTimer = undefined
+  }, remaining)
+}
 
 onMounted(() => {
   void refreshLabelCatalog()
   void refreshSession()
   void loadBundledCatalog('confirmed-hosts')
+})
+
+onBeforeUnmount(() => {
+  if (projectionProgressTimer !== undefined) clearTimeout(projectionProgressTimer)
 })
 
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
@@ -72,7 +114,6 @@ watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
 async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
   const definition = BUNDLED_CATALOGS[catalogKey]
   const loadId = ++catalogLoadId
-  selectedBundledCatalogKey.value = catalogKey
   importStatus.value = `Loading ${definition.count.toLocaleString()} ${definition.label}…`
   try {
     const response = await fetch(`${import.meta.env.BASE_URL}${definition.file}`)
@@ -80,11 +121,13 @@ async function loadBundledCatalog(catalogKey: keyof typeof BUNDLED_CATALOGS) {
     const parsed = parseGaiaCsv(await response.text())
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(parsed, definition.focusedCatalog, definition.count)
+    selectedBundledCatalogKey.value = catalogKey
+    if (!definition.focusedCatalog) setProjectionEpoch(undefined)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
     if (loadId !== catalogLoadId) return
-    catalogState.value = 'Catalog unavailable'
+    if (!atlas.state.activeCatalog) catalogState.value = 'Catalog unavailable'
     importStatus.value = `The bundled Gaia DR3 volume could not be loaded: ${error instanceof Error ? error.message : 'unknown error'}.`
   }
 }
@@ -96,6 +139,7 @@ async function importCatalog(file: File) {
     if (loadId !== catalogLoadId) return
     atlas.activateCatalog(catalog, false)
     selectedBundledCatalogKey.value = undefined
+    setProjectionEpoch(undefined)
     resetSearch()
     updateCatalogStatus()
   } catch (error) {
@@ -209,7 +253,11 @@ function searchCatalog(query: string) {
     searchStatus.value = 'The active catalog is still loading.'
     return
   }
-  const results = atlas.runSearch(query)
+  const results = atlas.runSearch(query, (object) => (
+    isNonGaiaStar(object)
+    || projectionEpoch.value === undefined
+    || hasMeasuredSixDimensionalState(object)
+  ))
   searchResults.value = results.map((object) => ({
     object,
     name: sourceDisplayName(object),
@@ -277,15 +325,20 @@ function searchableIdentifiers(object: AtlasObject) {
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (isNonGaiaStar(object)) {
-    const [x, y, z] = object.position
-    return [
+    const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
+    const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
+    const fields: Array<[string, string]> = [
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRS X (pc)', String(x)],
-      ['Barycentric ICRS Y (pc)', String(y)],
-      ['Barycentric ICRS Z (pc)', String(z)],
+      ['Barycentric ICRF X (pc)', String(x)],
+      ['Barycentric ICRF Y (pc)', String(y)],
+      ['Barycentric ICRF Z (pc)', String(z)],
       ['Gaia DR3 source ID', 'Not applicable: Sol is not a Gaia source'],
     ]
+    if (projectionEpoch.value !== undefined) {
+      fields.splice(2, 0, ['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
+    }
+    return fields
   }
   const distanceParsecs = 1000 / object.parallax
   const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
@@ -312,6 +365,30 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', object.knownSystemDiameterAu.toPrecision(8)])
   if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', object.knownSystemDiameterLightSeconds.toPrecision(8)])
   if (object.evidence) fields.push(['Evidence', object.evidence])
+  if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
+  if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
+  if (object.ruwe !== undefined && Number.isFinite(object.ruwe)) fields.push(['RUWE', object.ruwe.toPrecision(5)])
+  if (projectionEpoch.value !== undefined) {
+    fields.push(['Displayed epoch', `J${projectionEpoch.value.toFixed(1)} (constant-velocity projection from J2016.0)`])
+    fields.push(['6D projection inputs', hasMeasuredSixDimensionalState(object) ? `Measured Gaia proper motion and ${object.radialVelocitySource ?? 'Gaia DR3'} radial velocity available` : 'Unavailable: this source is excluded from projected rendering'])
+    if (object.radialVelocitySource && object.radialVelocitySource !== 'Gaia DR3') {
+      fields.push(['Radial-velocity source', object.radialVelocitySource])
+      if (object.radialVelocityQuality) fields.push(['Radial-velocity quality', object.radialVelocityQuality])
+      if (object.radialVelocityBibliographyCode) fields.push(['Radial-velocity bibliography', object.radialVelocityBibliographyCode])
+    }
+    const projected = propagateGaiaPosition(object, projectionEpoch.value)
+    if (projected) {
+      const current = cartesianPosition(object)
+      const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
+      fields.push(['Projected barycentric X (pc)', projected[0].toPrecision(10)])
+      fields.push(['Projected barycentric Y (pc)', projected[1].toPrecision(10)])
+      fields.push(['Projected barycentric Z (pc)', projected[2].toPrecision(10)])
+      fields.push(['J2016.0 to projected displacement (AU)', displacementAu.toPrecision(8)])
+      const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
+      fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
+      fields.push(['Projected RSS Cartesian uncertainty (pc)', uncertainty === undefined ? 'Unavailable or invalid' : uncertainty.toPrecision(6)])
+    }
+  }
   return fields
 }
 
@@ -346,7 +423,16 @@ function routeDisplay(endpoints: AtlasObject[]) {
 }
 
 function positionForObject(object: AtlasObject): [number, number, number] {
-  if (isNonGaiaStar(object)) return object.position
+  if (isNonGaiaStar(object)) {
+    if (projectionEpoch.value === undefined) return object.position
+    const elapsedYears = projectionEpoch.value - GAIA_REFERENCE_EPOCH
+    return object.position.map((value, index) => value + object.velocity[index] * elapsedYears) as [number, number, number]
+  }
+  if (projectionEpoch.value !== undefined) {
+    const projected = propagateGaiaPosition(object, projectionEpoch.value)
+    if (!projected) throw new Error(`Gaia DR3 ${object.sourceId} lacks the measured 6D state required for projected routes.`)
+    return [...projected]
+  }
   return cartesianPosition(object)
 }
 
@@ -410,10 +496,15 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
           :import-status="importStatus"
           :label-catalog-status="labelCatalogStatus"
+          :projection-epoch="projectionEpoch"
+          :projection-available="atlas.state.activeFocusedCatalog"
+          :projected-source-count="projectedSourceCount"
+          :projection-rendering="projectionRendering"
           @change-catalog="loadBundledCatalog"
           @toggle-labels="toggleLabels"
           @import-file="importCatalog"
           @retry-labels="refreshLabelCatalog"
+          @change-projection-epoch="setProjectionEpoch"
         />
         <CatalogSearch
           :key="searchResetId"
@@ -435,10 +526,12 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :alternative-label-ids="atlas.state.alternativeLabelIds"
           :permanent-labels="atlas.state.permanentLabels.labelsBySourceId"
           :route-endpoints="atlas.state.measurementEndpoints"
+          :projection-epoch="projectionEpoch"
           :display-name="sourceDisplayName"
           @select="selectMapObject"
           @focus="focusMapObject"
           @pop-route="popRoute"
+          @projection-rendered="finishProjectionRender"
         />
         <p class="scene-hint">
           Drag to orbit · scroll to zoom · double-click a point for its Gaia values
@@ -446,7 +539,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       </div>
     </section>
     <footer>
-      <span>TRAPPIST-1 is the origin · axes: ICRS Cartesian X, Y, Z · units: parsecs</span>
+      <span>TRAPPIST-1 is the origin · Gaia axes: ICRS Cartesian X, Y, Z · Sol: JPL Horizons ICRF state · units: parsecs</span>
       <a
         href="https://exoplanetarchive.ipac.caltech.edu/"
         target="_blank"

@@ -60,6 +60,25 @@ describe('useAtlasState', () => {
     expect(atlas.state.knownCatalogIdentifiers).toEqual({})
   })
 
+  it('clears selection and route state when replacing the active catalog', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+    atlas.activateCatalog(catalog, true)
+    atlas.selectMapObject(wolf)
+    atlas.selectMapObject(trappist)
+
+    atlas.activateCatalog({
+      rows: [trappist],
+      rejected: 0,
+      outOfRange: 0,
+    }, false)
+
+    expect(atlas.state.selectedObject).toBeUndefined()
+    expect(atlas.state.measurementEndpoints).toEqual([])
+    expect(atlas.state.activeCatalog?.rows).toEqual([trappist])
+    expect(atlas.state.activeFocusedCatalog).toBe(false)
+  })
+
   it('keeps a selected search match label while preserving official label IDs', () => {
     const atlas = useAtlasState()
     atlas.setLabelCatalog(permanentLabels)
@@ -71,6 +90,15 @@ describe('useAtlasState', () => {
     atlas.locateObject(wolf)
     expect(atlas.state.alternativeLabelIds).toEqual(new Set(['wolf']))
     expect(atlas.displayedLabelIds()).toContain('2635476908753563008')
+  })
+
+  it('does not expose filtered search matches as temporary labels', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+    atlas.activateCatalog(catalog, true)
+
+    expect(atlas.runSearch('1069', () => false)).toEqual([])
+    expect(atlas.state.alternativeLabelIds).toEqual(new Set())
   })
 
   it('distinguishes locating a result from map selection for route state', () => {
@@ -86,6 +114,18 @@ describe('useAtlasState', () => {
     atlas.popRouteEndpoint()
     expect(atlas.state.measurementEndpoints).toEqual([])
     expect(atlas.state.selectedObject).toBeUndefined()
+  })
+
+  it('can clear a stale selected object without changing the active catalog', () => {
+    const atlas = useAtlasState()
+    atlas.setLabelCatalog(permanentLabels)
+    atlas.activateCatalog(catalog, true)
+    atlas.locateObject(wolf)
+
+    atlas.clearSelectedObject()
+
+    expect(atlas.state.selectedObject).toBeUndefined()
+    expect(atlas.state.activeCatalog?.rows).toEqual([trappist, wolf])
   })
 
   it('clears route endpoints without clearing the selected object', () => {

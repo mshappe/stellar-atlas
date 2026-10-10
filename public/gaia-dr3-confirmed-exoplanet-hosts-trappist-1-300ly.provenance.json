@@ -13,6 +13,58 @@
     "coordinate_frame": "ICRS",
     "astrometry_reference_epoch": "J2016.0"
   },
+  "gaia_kinematics_enrichment": {
+    "catalog": "Gaia DR3",
+    "table": "gaiadr3.gaia_source",
+    "endpoint": "https://gea.esac.esa.int/tap-server/tap/sync",
+    "retrieved_at": "2026-10-09T15:47:15-05:00",
+    "selection": "Exact source_id values from gaia-dr3-confirmed-exoplanet-hosts-trappist-1-300ly.csv; the enrichment query returns one Gaia row for each focused catalog row.",
+    "adql_columns": [
+      "source_id",
+      "astrometric_params_solved",
+      "ra_error",
+      "dec_error",
+      "pmra",
+      "pmra_error",
+      "pmdec",
+      "pmdec_error",
+      "radial_velocity",
+      "radial_velocity_error",
+      "ruwe",
+      "duplicated_source",
+      "ra_dec_corr",
+      "ra_parallax_corr",
+      "ra_pmra_corr",
+      "ra_pmdec_corr",
+      "dec_parallax_corr",
+      "dec_pmra_corr",
+      "dec_pmdec_corr",
+      "parallax_pmra_corr",
+      "parallax_pmdec_corr",
+      "pmra_pmdec_corr"
+    ],
+    "output_row_count": 1000,
+    "coverage": {
+      "sources_with_gaia_radial_velocity_and_error": 946,
+      "sources_with_supplemental_radial_velocity_and_error": 41,
+      "sources_with_any_cited_radial_velocity_and_error": 987,
+      "sources_with_five_parameter_astrometric_solution": 923,
+      "sources_with_gaia_rv_projectable_6d_inputs": 886,
+      "sources_with_projectable_6d_inputs": 911,
+      "sources_with_duplicated_source_flag": 78,
+      "sources_with_ruwe_above_1_4": 81,
+      "sources_with_nss_table_membership": 23
+    },
+    "gaia_nss_evidence": {
+      "provenance_file": "focused-nss-membership.provenance.json",
+      "purpose": "Expose exact Gaia DR3 non-single-star table membership for focused sources without inferring an NSS solution from another quality field."
+    },
+    "generator": "scripts/enrich_focused_catalog_kinematics.py"
+  },
+  "projection_radial_velocity_supplements": {
+    "provenance_file": "focused-radial-velocity-supplements.provenance.json",
+    "purpose": "Supply cited SIMBAD radial velocities only where Gaia DR3 omits a radial velocity or its uncertainty. The supplemental source ID must exactly match a focused Gaia DR3 source ID."
+  },
   "volume": {
     "center": {
       "gaia_dr3_source_id": "2635476908753563008",

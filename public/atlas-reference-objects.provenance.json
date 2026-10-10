@@ -1,5 +1,5 @@
 {
-  "frame": "ICRS barycentric",
+  "frame": "ICRF barycentric",
   "epoch": "J2016.0 (JD 2457389.0 TDB)",
   "objects": [
     {
@@ -12,13 +12,23 @@
       "reference_system": "ICRF",
       "position_au": [
         0.00373759684930453,
-        0.001405550559281159,
-        -0.0001611777598550658
+        0.001353680256386395,
+        0.0004112182005178529
       ],
       "position_pc": [
         1.812038087014733e-8,
-        6.814301406306658e-9,
-        -7.81411830683232e-10
+        6.562827081439886e-9,
+        1.9936420953229955e-9
+      ],
+      "velocity_au_per_day": [
+        8.566056346095415e-7,
+        6.339072168948196e-6,
+        2.718014823834664e-6
+      ],
+      "velocity_pc_per_julian_year": [
+        1.5168618133833458e-9,
+        1.1225114704903383e-8,
+        4.813011644925665e-9
       ],
       "query": {
         "EPHEM_TYPE": "VECTORS",
@@ -27,9 +37,11 @@
         "STEP_SIZE": "1 d",
         "OUT_UNITS": "AU-D",
         "VEC_TABLE": "2",
+        "REF_PLANE": "FRAME",
+        "REF_SYSTEM": "ICRF",
         "CSV_FORMAT": "YES"
       },
-      "conversion": "parsecs = astronomical_units / 206264.80624709636"
+      "conversion": "position_parsecs = astronomical_units / 206264.80624709636; velocity_parsecs_per_julian_year = astronomical_units_per_day × 365.25 / 206264.80624709636"
     }
   ]
 }

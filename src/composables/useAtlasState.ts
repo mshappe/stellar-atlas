@@ -57,6 +57,8 @@ export function useAtlasState() {
     state.selectedOrigin = origin
     state.activeCatalog = filteredCatalog
     state.activeFocusedCatalog = focusedCatalog
+    state.selectedObject = undefined
+    state.measurementEndpoints = []
     clearSearch()
   }
 
@@ -64,10 +66,10 @@ export function useAtlasState() {
     state.hideUnlabeledStars = !state.hideUnlabeledStars
   }
 
-  function runSearch(query: string) {
+  function runSearch(query: string, isVisible: (object: GaiaRow) => boolean = () => true) {
     const normalizedQuery = query.trim().toLowerCase()
     const rows = state.activeCatalog
-      ? searchCatalogRows(state.activeCatalog.rows, query, state.permanentLabels.labelsBySourceId, state.knownCatalogIdentifiers)
+      ? searchCatalogRows(state.activeCatalog.rows, query, state.permanentLabels.labelsBySourceId, state.knownCatalogIdentifiers).filter(isVisible)
       : []
     state.matchedSearchSourceIds = new Set(rows.map((row) => row.sourceId))
     state.alternativeLabelIds = new Set([...state.matchedSearchSourceIds]
@@ -86,6 +88,10 @@ export function useAtlasState() {
   function locateObject(object: AtlasObject) {
     collapseSearchMatchLabels(object)
     state.selectedObject = object
+  }
+
+  function clearSelectedObject() {
+    state.selectedObject = undefined
   }
 
   function selectMapObject(object: AtlasObject) {
@@ -139,6 +145,7 @@ export function useAtlasState() {
     runSearch,
     clearSearch,
     locateObject,
+    clearSelectedObject,
     selectMapObject,
     popRouteEndpoint,
     clearRoute,

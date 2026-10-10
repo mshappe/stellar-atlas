@@ -6,6 +6,7 @@ import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRe
 import { MAX_DISTANCE_PARSECS, SOL } from '../atlas-data'
 import type { AtlasObject, GaiaRow, ParsedCatalog } from '../atlas-types'
 import { cartesianPosition, relativeCartesianPosition } from '../catalog'
+import { GAIA_REFERENCE_EPOCH, propagateGaiaPosition } from '../space-motion'
 
 const props = defineProps<{
   catalog?: ParsedCatalog
@@ -16,12 +17,14 @@ const props = defineProps<{
   permanentLabels: Readonly<Record<string, string>>
   routeEndpoints: AtlasObject[]
   displayName: (object: AtlasObject) => string
+  projectionEpoch?: number
 }>()
 
 const emit = defineEmits<{
   select: [object: AtlasObject]
   focus: [object: AtlasObject]
   popRoute: []
+  projectionRendered: []
 }>()
 
 const COLOR_STOPS: Array<[number, [number, number, number]]> = [
@@ -34,7 +37,10 @@ const COLOR_STOPS: Array<[number, [number, number, number]]> = [
 ]
 
 const sceneElement = ref<HTMLDivElement>()
-const catalogRows = computed(() => props.catalog?.rows ?? [])
+const motionTrailsVisible = ref(false)
+const catalogRows = computed(() => (props.catalog?.rows ?? []).filter((row) => (
+  props.projectionEpoch === undefined || propagateGaiaPosition(row, props.projectionEpoch) !== undefined
+)))
 let scene: THREE.Scene | undefined
 let camera: THREE.PerspectiveCamera | undefined
 let renderer: THREE.WebGLRenderer | undefined
@@ -45,7 +51,13 @@ let routePath: SVGPolylineElement | undefined
 let routeMarkers: SVGGElement | undefined
 let resizeObserver: ResizeObserver | undefined
 let animationFrame: number | undefined
+let projectionRenderFrame: number | undefined
 let stars: THREE.Points | undefined
+let motionTrails: THREE.LineSegments | undefined
+let motionTrailMaterial: THREE.LineBasicMaterial | undefined
+let motionGhosts: THREE.Points | undefined
+let motionGhostMaterial: THREE.PointsMaterial | undefined
+let motionTrailStartedAt: number | undefined
 let axes: THREE.AxesHelper | undefined
 let solMarker: THREE.Points | undefined
 let solLabel: CSS2DObject | undefined
@@ -63,8 +75,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (animationFrame !== undefined) cancelAnimationFrame(animationFrame)
+  if (projectionRenderFrame !== undefined) cancelAnimationFrame(projectionRenderFrame)
   resizeObserver?.disconnect()
   clearRenderedCatalog()
+  clearMotionTrails()
   if (solMarker) {
     solMarker.geometry.dispose()
     ;(solMarker.material as THREE.Material).dispose()
@@ -75,12 +89,24 @@ onBeforeUnmount(() => {
   routeOverlay?.remove()
 })
 
-watch([() => props.catalog, () => props.selectedOrigin], renderCatalog)
+watch([() => props.catalog, () => props.selectedOrigin], () => renderCatalog(true))
+watch(() => props.projectionEpoch, () => {
+  if (projectionRenderFrame !== undefined) cancelAnimationFrame(projectionRenderFrame)
+  projectionRenderFrame = requestAnimationFrame(() => {
+    projectionRenderFrame = undefined
+    renderCatalog(false)
+    emit('projectionRendered')
+  })
+})
 watch(() => props.labelIds, () => {
   renderStarLabels()
   setPointVisibility()
+  renderMotionTrails(visibleCatalogRows())
 })
-watch(() => props.hideUnlabeledStars, setPointVisibility)
+watch(() => props.hideUnlabeledStars, () => {
+  setPointVisibility()
+  renderMotionTrails(visibleCatalogRows())
+})
 
 function initializeScene(container: HTMLDivElement) {
   scene = new THREE.Scene()
@@ -172,17 +198,19 @@ function resizeRenderer() {
 function render() {
   if (!scene || !camera || !renderer || !labelRenderer || !controls) return
   controls.update()
+  fadeMotionTrails()
   renderer.render(scene, camera)
   updateRouteOverlay()
   labelRenderer.render(scene, camera)
   animationFrame = requestAnimationFrame(render)
 }
 
-function renderCatalog() {
+function renderCatalog(resetCamera = true) {
   if (!scene || !camera || !controls) return
   clearRenderedCatalog()
   const rows = catalogRows.value
   if (!rows.length) {
+    clearMotionTrails()
     updateSolRenderPosition()
     return
   }
@@ -233,14 +261,17 @@ function renderCatalog() {
   renderStarLabels()
   setPointVisibility()
   updateSolRenderPosition()
+  renderMotionTrails(visibleCatalogRows())
 
-  const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
-  camera.position.set(framingDistance, framingDistance * 0.65, framingDistance * 0.45)
-  camera.near = Math.max(farthest / 1e7, 0.00001)
-  camera.far = Math.max(farthest * 10, 100)
-  camera.updateProjectionMatrix()
-  controls.target.set(0, 0, 0)
-  controls.update()
+  if (resetCamera) {
+    const framingDistance = Math.max(MAX_DISTANCE_PARSECS * 2.2, farthest * 2.2, 2)
+    camera.position.set(framingDistance, framingDistance * 0.65, framingDistance * 0.45)
+    camera.near = Math.max(farthest / 1e7, 0.00001)
+    camera.far = Math.max(farthest * 10, 100)
+    camera.updateProjectionMatrix()
+    controls.target.set(0, 0, 0)
+    controls.update()
+  }
   axes?.scale.setScalar(Math.max(MAX_DISTANCE_PARSECS * 0.1, farthest * 0.1, 1))
 }
 
@@ -251,6 +282,86 @@ function clearRenderedCatalog() {
   ;(stars.material as THREE.Material).dispose()
   stars = undefined
   starLabels?.clear()
+}
+
+function renderMotionTrails(rows: GaiaRow[]) {
+  clearMotionTrails()
+  if (props.projectionEpoch === undefined || props.projectionEpoch === GAIA_REFERENCE_EPOCH || !scene) return
+  const originAtCatalogEpoch = catalogEpochPosition(props.selectedOrigin)
+  const positions = new Float32Array(rows.length * 6)
+  const ghostPositions = new Float32Array(rows.length * 3)
+  rows.forEach((row, index) => {
+    const catalogEpochPosition = relativeCartesianPosition(cartesianPosition(row), originAtCatalogEpoch)
+    const projectedPosition = relativePosition(row)
+    positions.set([
+      catalogEpochPosition[0], catalogEpochPosition[1], catalogEpochPosition[2],
+      projectedPosition.x, projectedPosition.y, projectedPosition.z,
+    ], index * 6)
+    ghostPositions.set(catalogEpochPosition, index * 3)
+  })
+  const geometry = new THREE.BufferGeometry()
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+  motionTrailMaterial = new THREE.LineBasicMaterial({
+    color: '#8bdcff',
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    depthTest: false,
+  })
+  motionTrails = new THREE.LineSegments(geometry, motionTrailMaterial)
+  motionTrails.renderOrder = 1
+  scene.add(motionTrails)
+  const ghostGeometry = new THREE.BufferGeometry()
+  ghostGeometry.setAttribute('position', new THREE.BufferAttribute(ghostPositions, 3))
+  motionGhostMaterial = new THREE.PointsMaterial({
+    color: '#8bdcff',
+    size: 7,
+    sizeAttenuation: false,
+    transparent: true,
+    opacity: 0.9,
+    depthWrite: false,
+    depthTest: false,
+  })
+  motionGhosts = new THREE.Points(ghostGeometry, motionGhostMaterial)
+  motionGhosts.renderOrder = 2
+  scene.add(motionGhosts)
+  motionTrailStartedAt = performance.now()
+  motionTrailsVisible.value = true
+}
+
+function visibleCatalogRows() {
+  return props.hideUnlabeledStars
+    ? catalogRows.value.filter((row) => props.labelIds.has(row.sourceId))
+    : catalogRows.value
+}
+
+function fadeMotionTrails() {
+  if (!motionTrailMaterial || motionTrailStartedAt === undefined) return
+  const remaining = 1 - (performance.now() - motionTrailStartedAt) / 120_000
+  if (remaining <= 0) {
+    clearMotionTrails()
+    return
+  }
+  motionTrailMaterial.opacity = 0.9 * remaining
+  if (motionGhostMaterial) motionGhostMaterial.opacity = 0.9 * remaining
+}
+
+function clearMotionTrails() {
+  if (!motionTrails || !scene) return
+  scene.remove(motionTrails)
+  motionTrails.geometry.dispose()
+  motionTrailMaterial?.dispose()
+  if (motionGhosts) {
+    scene.remove(motionGhosts)
+    motionGhosts.geometry.dispose()
+  }
+  motionGhostMaterial?.dispose()
+  motionTrails = undefined
+  motionTrailMaterial = undefined
+  motionGhosts = undefined
+  motionGhostMaterial = undefined
+  motionTrailStartedAt = undefined
+  motionTrailsVisible.value = false
 }
 
 function renderStarLabels() {
@@ -370,11 +481,22 @@ function relativePosition(object: AtlasObject) {
 }
 
 function positionFromObject(object: AtlasObject) {
-  return isNonGaiaStar(object) ? new THREE.Vector3(...object.position) : positionFromRow(object)
+  if (isNonGaiaStar(object)) {
+    const elapsedYears = props.projectionEpoch === undefined ? 0 : props.projectionEpoch - GAIA_REFERENCE_EPOCH
+    return new THREE.Vector3(...object.position.map((value, index) => value + object.velocity[index] * elapsedYears))
+  }
+  return positionFromRow(object)
+}
+
+function catalogEpochPosition(object: AtlasObject) {
+  return isNonGaiaStar(object) ? object.position : cartesianPosition(object)
 }
 
 function positionFromRow(row: GaiaRow) {
-  return new THREE.Vector3(...cartesianPosition(row))
+  if (props.projectionEpoch === undefined) return new THREE.Vector3(...cartesianPosition(row))
+  const projected = propagateGaiaPosition(row, props.projectionEpoch)
+  if (!projected) throw new Error(`Gaia DR3 ${row.sourceId} lacks the measured 6D state required for projected rendering.`)
+  return new THREE.Vector3(...projected)
 }
 
 function isNonGaiaStar(object: AtlasObject): object is typeof SOL {
@@ -407,5 +529,12 @@ defineExpose({ focusObject: focusOnObject })
     ref="sceneElement"
     class="atlas-scene"
     aria-label="Interactive three-dimensional stellar field"
-  />
+  >
+    <p
+      v-if="motionTrailsVisible"
+      class="motion-trail-status"
+    >
+      Cyan ghosts and lines show J2016.0 positions; they fade over two minutes.
+    </p>
+  </div>
 </template>
