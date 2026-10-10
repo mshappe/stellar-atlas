@@ -43,7 +43,7 @@ const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
 const SELECTED_SOURCE_SUMMARY_TERMS = [
-  'Display distance (ly)',
+  'Distance from map origin (ly)',
   'Catalog category',
   'Confirmed planets',
   'Planet name(s)',
@@ -343,11 +343,15 @@ function searchableIdentifiers(object: AtlasObject) {
 }
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
+  const distanceFromMapOrigin = formatLightYears(cartesianDistance(
+    positionForObject(object),
+    positionForObject(atlas.state.selectedOrigin),
+  ))
   if (isNonGaiaStar(object)) {
     const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
-      ['Display distance (ly)', formatLightYears(0)],
+      ['Distance from map origin (ly)', distanceFromMapOrigin],
       ['Catalog category', object.sourceCategory],
       ['Confirmed planets', String(object.planetCount)],
       ['Planet name(s)', object.planetNames],
@@ -373,7 +377,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     ['RA (deg)', formatMeasurement(object.ra)],
     ['Dec (deg)', formatMeasurement(object.dec)],
     ['Parallax (mas)', formatMeasurement(object.parallax)],
-    ['Display distance (ly)', formatLightYears(distanceParsecs)],
+    ['Distance from map origin (ly)', distanceFromMapOrigin],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
   if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', formatMeasurement(object.parallaxError)])

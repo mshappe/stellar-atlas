@@ -28,12 +28,12 @@ describe('SelectionPanel', () => {
     const wrapper = mount(SelectionPanel, {
       props: {
         name: 'TRAPPIST-1',
-        summaryFields: [['Display distance (ly)', '40.7']],
+        summaryFields: [['Distance from map origin (ly)', '40.7']],
         detailFields: [['Gaia source ID', '2635476908753563008']],
       },
     })
 
-    expect(wrapper.find('section > dl').text()).toContain('Display distance (ly)')
+    expect(wrapper.find('section > dl').text()).toContain('Distance from map origin (ly)')
     expect(wrapper.find('section > dl').text()).not.toContain('Gaia source ID')
 
     await wrapper.get('.selection-details-link').trigger('click')

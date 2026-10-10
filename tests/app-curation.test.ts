@@ -66,7 +66,7 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
-  it('displays selected-source distances in light-years without parsecs', async () => {
+  it('displays selected-source distances from the active map origin in light-years', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)
       if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
@@ -83,8 +83,11 @@ describe('App label curation', () => {
     wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Display distance (ly)')
-    expect(wrapper.text()).not.toContain('Display distance (pc)')
+    expect(wrapper.text()).toContain('Distance from map origin (ly)')
+    expect(wrapper.text()).not.toContain('Distance from map origin (pc)')
+    expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
+      ['Distance from map origin (ly)', '0.569'],
+    ])
   })
 
   it('shows Sol with the same concise system metadata as catalog stars', async () => {
@@ -105,7 +108,7 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Display distance (ly)', '0'],
+      ['Distance from map origin (ly)', '32.616'],
       ['Catalog category', 'Solar System reference star'],
       ['Confirmed planets', '8'],
       ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
