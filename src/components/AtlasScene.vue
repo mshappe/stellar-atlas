@@ -68,8 +68,8 @@ let starLabels: THREE.Group | undefined
 onMounted(() => {
   if (!sceneElement.value) return
   initializeScene(sceneElement.value)
-  renderCatalog()
   resizeRenderer()
+  renderCatalog()
   render()
 })
 

@@ -28,6 +28,11 @@ describe('formatDisplayName', () => {
       expect(formatMeasurement(-12.3456)).toBe('-12.346')
       expect(formatMeasurement(12)).toBe('12')
     })
+
+    it('uses scientific notation for nonzero values below three-decimal precision', () => {
+      expect(formatMeasurement(0.0004)).toBe('4E-4')
+      expect(formatMeasurement(-0.0004)).toBe('-4E-4')
+    })
   })
 
   it('leaves non-designation catalog names unchanged', () => {

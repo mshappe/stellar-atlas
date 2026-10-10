@@ -56,6 +56,11 @@ const CONSTELLATION_GENITIVES: Record<string, string> = {
   TrA: 'Trianguli Australis', Tri: 'Trianguli', Tuc: 'Tucanae', UMa: 'Ursae Majoris',
   UMi: 'Ursae Minoris', Vel: 'Velorum', Vir: 'Virginis', Vol: 'Volantis', Vul: 'Vulpeculae',
 }
+const MEASUREMENT_FORMATTER = new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 })
+const SMALL_MEASUREMENT_FORMATTER = new Intl.NumberFormat('en-US', {
+  notation: 'scientific',
+  maximumSignificantDigits: 3,
+})
 
 export function cartesianPosition({ ra, dec, parallax }: AstrometricPosition): [number, number, number] {
   const distanceParsecs = 1000 / parallax
@@ -166,5 +171,7 @@ export function formatDisplayName(name: string) {
 }
 
 export function formatMeasurement(value: number) {
-  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 3 }).format(value)
+  return value !== 0 && Math.abs(value) < 0.001
+    ? SMALL_MEASUREMENT_FORMATTER.format(value)
+    : MEASUREMENT_FORMATTER.format(value)
 }
