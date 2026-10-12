@@ -36,7 +36,7 @@ services:
       PUBLIC_ORIGIN: http://localhost:5173
       LABEL_DATABASE_PATH: /app/runtime/labels.sqlite
       SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
-    command: node --import tsx server/main.ts
+    command: node --watch --import tsx server/main.ts
     volumes:
       - .:/app
       - dev-node-modules:/app/node_modules

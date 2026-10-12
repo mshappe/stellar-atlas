@@ -56,7 +56,7 @@ For live-reload development, run Vite and the API as separate containerized serv
 docker compose --profile dev up vite
 ```
 
-Open `http://localhost:5173`. Vite watches the mounted source tree and proxies `/api` to the `api` service; configure the GitHub OAuth app with `http://localhost:5173` as its homepage and `http://localhost:5173/api/auth/github/callback` as its callback URL. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
+Open `http://localhost:5173`. Vite watches the mounted source tree and proxies `/api` to the `api` service; the API service also restarts automatically when its server or shared source files change. Configure the GitHub OAuth app with `http://localhost:5173` as its homepage and `http://localhost:5173/api/auth/github/callback` as its callback URL. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
 
 Run tests and linting in the Docker build environment:
 
