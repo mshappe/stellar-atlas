@@ -503,6 +503,14 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       aria-label="3D stellar visualization"
     >
       <aside class="sidebar">
+        <CatalogSearch
+          :key="searchResetId"
+          :results="searchResults"
+          :status="searchStatus"
+          @search="searchCatalog"
+          @locate="locateSearchResult"
+          @clear="clearSearchDisplay"
+        />
         <SelectionPanel
           :name="selectedName"
           :summary-fields="selectedFieldGroups.summaryFields"
@@ -541,14 +549,6 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @import-file="importCatalog"
           @retry-labels="refreshLabelCatalog"
           @change-projection-epoch="setProjectionEpoch"
-        />
-        <CatalogSearch
-          :key="searchResetId"
-          :results="searchResults"
-          :status="searchStatus"
-          @search="searchCatalog"
-          @locate="locateSearchResult"
-          @clear="clearSearchDisplay"
         />
         <ReferenceFramePanel />
       </aside>

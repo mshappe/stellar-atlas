@@ -66,6 +66,25 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('places star search first in the sidebar', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.find('.sidebar').findAllComponents({ name: 'CatalogSearch' })[0].element)
+      .toBe(wrapper.find('.sidebar').element.firstElementChild)
+  })
+
   it('documents current map interactions', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)
