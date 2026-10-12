@@ -106,6 +106,26 @@ describe('App label curation', () => {
     expect(wrapper.find('.sidebar').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(false)
   })
 
+  it('shows a global sign-out control for an authenticated session', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.get('.header-sign-out').text()).toBe('Sign out')
+    expect(wrapper.get('.header-sign-out').attributes('title')).toBe('Signed in as mshappe')
+  })
+
   it('documents current map interactions', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)

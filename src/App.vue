@@ -567,9 +567,26 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
             @retry-labels="refreshLabelCatalog"
             @change-projection-epoch="setProjectionEpoch"
           />
+          <button
+            v-if="session?.authenticated"
+            class="header-sign-out"
+            type="button"
+            :disabled="signingOut"
+            :title="`Signed in as ${session.login}`"
+            @click="signOutFromCuration"
+          >
+            {{ signingOut ? 'Signing out…' : 'Sign out' }}
+          </button>
         </div>
         <p class="catalog-state">
           {{ catalogState }}
+        </p>
+        <p
+          v-if="logoutError"
+          class="logout-status"
+          role="status"
+        >
+          {{ logoutError }}
         </p>
       </div>
     </header>

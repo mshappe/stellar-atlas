@@ -56,6 +56,22 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   justify-items: end;
   gap: .25rem;
 }
+.header-sign-out {
+  padding: .35rem .55rem;
+  border: 1px solid #3f5e89;
+  border-radius: .35rem;
+  background: #0e2038;
+  color: #dbe9ff;
+  cursor: pointer;
+  font-size: .8rem;
+}
+.header-sign-out:hover { background: #162943; }
+.logout-status {
+  margin: 0;
+  color: #ffb8b8;
+  font-size: .75rem;
+  text-align: right;
+}
 .interaction-hint {
   margin: 0;
   color: #aab8cc;
