@@ -520,36 +520,38 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
 <template>
   <main class="atlas">
     <header>
-      <div>
-        <p class="eyebrow">
-          Gaia DR3 spatial viewer
-        </p>
+      <div class="header-brand">
+        <div class="header-topline">
+          <p class="eyebrow">
+            Gaia DR3 spatial viewer
+          </p>
+          <div class="header-actions">
+            <ReferenceFramePanel />
+            <CatalogControls
+              :selected-catalog-key="selectedBundledCatalogKey"
+              :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
+              :import-status="importStatus"
+              :label-catalog-status="labelCatalogStatus"
+              :projection-epoch="projectionEpoch"
+              :projection-available="atlas.state.activeFocusedCatalog"
+              :projected-source-count="projectedSourceCount"
+              :projection-rendering="projectionRendering"
+              @change-catalog="loadBundledCatalog"
+              @toggle-labels="toggleLabels"
+              @import-file="importCatalog"
+              @retry-labels="refreshLabelCatalog"
+              @change-projection-epoch="setProjectionEpoch"
+            />
+          </div>
+        </div>
         <h1>Stellar Atlas</h1>
       </div>
       <p class="interaction-hint">
         Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
       </p>
-      <div class="header-actions">
-        <p class="catalog-state">
-          {{ catalogState }}
-        </p>
-        <ReferenceFramePanel />
-        <CatalogControls
-          :selected-catalog-key="selectedBundledCatalogKey"
-          :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
-          :import-status="importStatus"
-          :label-catalog-status="labelCatalogStatus"
-          :projection-epoch="projectionEpoch"
-          :projection-available="atlas.state.activeFocusedCatalog"
-          :projected-source-count="projectedSourceCount"
-          :projection-rendering="projectionRendering"
-          @change-catalog="loadBundledCatalog"
-          @toggle-labels="toggleLabels"
-          @import-file="importCatalog"
-          @retry-labels="refreshLabelCatalog"
-          @change-projection-epoch="setProjectionEpoch"
-        />
-      </div>
+      <p class="catalog-state">
+        {{ catalogState }}
+      </p>
     </header>
     <section
       class="workspace"

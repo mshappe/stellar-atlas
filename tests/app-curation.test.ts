@@ -100,8 +100,8 @@ describe('App label curation', () => {
     const wrapper = mountApp()
     await flushPromises()
 
-    expect(wrapper.find('header').findComponent({ name: 'CatalogControls' }).exists()).toBe(true)
-    expect(wrapper.find('header').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(true)
+    expect(wrapper.find('.header-topline').findComponent({ name: 'CatalogControls' }).exists()).toBe(true)
+    expect(wrapper.find('.header-topline').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(true)
     expect(wrapper.find('.sidebar').findComponent({ name: 'CatalogControls' }).exists()).toBe(false)
     expect(wrapper.find('.sidebar').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(false)
   })
