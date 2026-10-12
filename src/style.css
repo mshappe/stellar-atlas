@@ -45,6 +45,13 @@ h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1; }
 h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
 .catalog-state { justify-self: end; margin: 0; color: #aab8cc; text-align: right; }
+.header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: .75rem;
+  min-width: 0;
+}
 .interaction-hint {
   margin: 0;
   color: #aab8cc;
@@ -74,11 +81,6 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 }
 
 .sidebar section + section {
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid #233652;
-}
-.catalog-settings-trigger + .catalog-settings-dialog + section {
   margin-top: 1.5rem;
   padding-top: 1.5rem;
   border-top: 1px solid #233652;
@@ -526,6 +528,7 @@ a { color: #9ec3ff; }
     gap: .4rem;
   }
   .catalog-state { justify-self: start; text-align: left; }
+  .header-actions { justify-content: start; }
   .interaction-hint { text-align: left; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }

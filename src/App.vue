@@ -529,9 +529,26 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
       <p class="interaction-hint">
         Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
       </p>
-      <p class="catalog-state">
-        {{ catalogState }}
-      </p>
+      <div class="header-actions">
+        <p class="catalog-state">
+          {{ catalogState }}
+        </p>
+        <CatalogControls
+          :selected-catalog-key="selectedBundledCatalogKey"
+          :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
+          :import-status="importStatus"
+          :label-catalog-status="labelCatalogStatus"
+          :projection-epoch="projectionEpoch"
+          :projection-available="atlas.state.activeFocusedCatalog"
+          :projected-source-count="projectedSourceCount"
+          :projection-rendering="projectionRendering"
+          @change-catalog="loadBundledCatalog"
+          @toggle-labels="toggleLabels"
+          @import-file="importCatalog"
+          @retry-labels="refreshLabelCatalog"
+          @change-projection-epoch="setProjectionEpoch"
+        />
+      </div>
     </header>
     <section
       class="workspace"
@@ -580,21 +597,6 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           v-bind="route"
           :has-endpoints="Boolean(atlas.state.measurementEndpoints.length)"
           @clear="clearRoute"
-        />
-        <CatalogControls
-          :selected-catalog-key="selectedBundledCatalogKey"
-          :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
-          :import-status="importStatus"
-          :label-catalog-status="labelCatalogStatus"
-          :projection-epoch="projectionEpoch"
-          :projection-available="atlas.state.activeFocusedCatalog"
-          :projected-source-count="projectedSourceCount"
-          :projection-rendering="projectionRendering"
-          @change-catalog="loadBundledCatalog"
-          @toggle-labels="toggleLabels"
-          @import-file="importCatalog"
-          @retry-labels="refreshLabelCatalog"
-          @change-projection-epoch="setProjectionEpoch"
         />
         <ReferenceFramePanel />
       </aside>
