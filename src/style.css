@@ -86,9 +86,13 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 
 .sidebar p, .sidebar dd, .sidebar dt {
   color: #bdc9db;
-  font-size: .85rem;
-  line-height: 1.5;
+  font-size: .8rem;
+  line-height: 1.45;
 }
+.sidebar > section h2 { font-size: .85rem; }
+.sidebar > section button,
+.sidebar > section input,
+.sidebar > section select { font-size: .85rem; }
 
 .selection-heading {
   margin-bottom: .25rem;
@@ -238,7 +242,7 @@ code { color: #cee0ff; }
   gap: .4rem;
   margin-top: 1rem;
   color: #bdc9db;
-  font-size: .85rem;
+  font-size: .8rem;
 }
 
 .catalog-control select {
@@ -258,7 +262,7 @@ code { color: #cee0ff; }
   display: grid;
   gap: .4rem;
   color: #bdc9db;
-  font-size: .85rem;
+  font-size: .8rem;
 }
 .curation-form select {
   width: 100%;
@@ -273,7 +277,7 @@ code { color: #cee0ff; }
   display: grid;
   gap: .4rem;
   color: #bdc9db;
-  font-size: .85rem;
+  font-size: .8rem;
 }
 .search-form > div {
   display: flex;
@@ -325,7 +329,7 @@ code { color: #cee0ff; }
   text-align: left;
 }
 .search-results button:hover { color: #fff; text-decoration: underline; }
-.search-results span { color: #94a8c4; font-size: .75rem; overflow-wrap: anywhere; }
+.search-results span { color: #94a8c4; font-size: .72rem; overflow-wrap: anywhere; }
 
 dl { margin: 0; }
 dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: .35rem 0; }
