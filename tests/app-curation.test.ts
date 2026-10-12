@@ -104,6 +104,7 @@ describe('App label curation', () => {
     expect(wrapper.find('.header-meta').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(true)
     expect(wrapper.find('.sidebar').findComponent({ name: 'CatalogControls' }).exists()).toBe(false)
     expect(wrapper.find('.sidebar').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(false)
+    expect(wrapper.get('.header-session-control').text()).toBe('Sign in')
   })
 
   it('shows a global sign-out control for an authenticated session', async () => {
@@ -122,8 +123,8 @@ describe('App label curation', () => {
     const wrapper = mountApp()
     await flushPromises()
 
-    expect(wrapper.get('.header-sign-out').text()).toBe('Sign out')
-    expect(wrapper.get('.header-sign-out').attributes('title')).toBe('Signed in as mshappe')
+    expect(wrapper.get('.header-session-control').text()).toBe('Sign out')
+    expect(wrapper.get('.header-session-control').attributes('title')).toBe('Signed in as mshappe')
   })
 
   it('documents current map interactions', async () => {

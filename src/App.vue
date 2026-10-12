@@ -568,14 +568,13 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
             @change-projection-epoch="setProjectionEpoch"
           />
           <button
-            v-if="session?.authenticated"
-            class="header-sign-out"
+            class="header-session-control"
             type="button"
-            :disabled="signingOut"
-            :title="`Signed in as ${session.login}`"
-            @click="signOutFromCuration"
+            :disabled="session?.authenticated && signingOut"
+            :title="session?.authenticated ? `Signed in as ${session.login}` : 'Sign in with GitHub'"
+            @click="session?.authenticated ? signOutFromCuration() : signInForCuration()"
           >
-            {{ signingOut ? 'Signing out…' : 'Sign out' }}
+            {{ session?.authenticated ? signingOut ? 'Signing out…' : 'Sign out' : 'Sign in' }}
           </button>
         </div>
         <p class="catalog-state">
