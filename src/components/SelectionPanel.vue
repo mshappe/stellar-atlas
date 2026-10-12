@@ -30,7 +30,10 @@ function handleLabelAction() {
 </script>
 
 <template>
-  <section v-if="name">
+  <section
+    v-if="name"
+    class="selected-source-panel"
+  >
     <p class="selection-heading">
       Selected source
     </p>

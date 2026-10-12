@@ -33,6 +33,7 @@ describe('SelectionPanel', () => {
       },
     })
 
+    expect(wrapper.get('.selected-source-panel').exists()).toBe(true)
     expect(wrapper.find('section > dl').text()).toContain('Distance from map origin (ly)')
     expect(wrapper.find('section > dl').text()).not.toContain('Gaia source ID')
 
