@@ -52,7 +52,6 @@ const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
 const SELECTED_SOURCE_SUMMARY_TERMS = [
   'Distance from map origin',
-  'Catalog category',
   'Confirmed planets',
   'Planet name(s)',
   'System diameter',
@@ -407,7 +406,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
       ['Distance from map origin', `${distanceFromMapOrigin} ly`],
-      ['Catalog category', object.sourceCategory],
+      ['Category', object.sourceCategory],
       ['Confirmed planets', String(object.planetCount)],
       ['Planet name(s)', object.planetNames],
       ['Orbital diameter', `${formatMeasurement(object.knownSystemDiameterAu)} AU`],
@@ -442,7 +441,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   }
   if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index', `${formatMeasurement(object.bpRp)} mag`])
   if (!preferredName && object.hostNames) fields.push(['NASA host identifier(s)', object.hostNames])
-  if (object.sourceCategory) fields.push(['Catalog category', object.sourceCategory])
+  if (object.sourceCategory) fields.push(['Category', object.sourceCategory])
   if (object.planetCount !== undefined && Number.isFinite(object.planetCount)) fields.push(['Confirmed planets', String(object.planetCount)])
   if (object.planetNames) fields.push(['Planet name(s)', object.planetNames])
   if (object.discoveryMethods) fields.push(['Discovery method(s)', object.discoveryMethods])

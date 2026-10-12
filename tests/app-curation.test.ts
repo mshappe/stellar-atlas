@@ -200,7 +200,6 @@ describe('App label curation', () => {
 
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
       ['Distance from map origin', '32.616 ly'],
-      ['Catalog category', 'Solar System reference star'],
       ['Confirmed planets', '8'],
       ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
       ['System diameter', '30,268.159 ls'],
