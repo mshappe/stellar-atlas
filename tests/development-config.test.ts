@@ -20,10 +20,13 @@ describe('development configuration', () => {
     }
   })
 
-  it('uses the configured Vite port as the API public origin without masking source data', async () => {
+  it('uses the configured Vite port as the API public origin while preserving image-built source data', async () => {
     const compose = await readFile('compose.yaml', 'utf8')
 
     expect(compose).toContain('PUBLIC_ORIGIN: http://localhost:${DEV_HOST_PORT:-5173}')
     expect(compose).not.toContain('dev-source-index')
+    expect(compose).not.toContain('- .:/app')
+    expect(compose).toContain('- ./src:/app/src')
+    expect(compose).toContain('- ./server:/app/server')
   })
 })

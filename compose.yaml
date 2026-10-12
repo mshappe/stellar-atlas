@@ -38,7 +38,8 @@ services:
       SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
     command: node --watch --import tsx server/main.ts
     volumes:
-      - .:/app
+      - ./server:/app/server
+      - ./src:/app/src
       - dev-node-modules:/app/node_modules
       - atlas-labels:/app/runtime
 
@@ -56,7 +57,10 @@ services:
     ports:
       - "${DEV_HOST_PORT:-5173}:5173"
     volumes:
-      - .:/app
+      - ./index.html:/app/index.html
+      - ./public:/app/public
+      - ./src:/app/src
+      - ./vite.config.ts:/app/vite.config.ts
       - dev-node-modules:/app/node_modules
 
 volumes:
