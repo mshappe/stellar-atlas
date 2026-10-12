@@ -40,8 +40,10 @@ describe('SelectionPanel', () => {
     expect(wrapper.get('.selected-source-panel').exists()).toBe(true)
     expect(wrapper.find('section > dl').text()).toContain('Distance from origin')
     expect(wrapper.find('section > dl').text()).toContain('40.7 ly / 1,284.394 lMs')
-    expect(wrapper.get('.origin-distance-label').attributes('title')).toBe('Map origin: Sol')
-    expect(wrapper.get('.system-diameter-label').attributes('title')).toContain('largest known planetary apoastron')
+    await wrapper.get('.origin-distance-label button').trigger('click')
+    expect(wrapper.get('.origin-distance-label [role="tooltip"]').text()).toBe('Map origin: Sol')
+    await wrapper.get('.system-diameter-label button').trigger('click')
+    expect(wrapper.get('.system-diameter-label [role="tooltip"]').text()).toContain('largest known planetary apoastron')
     expect(wrapper.find('section > dl').text()).toContain('1,278.45 ls')
     expect(wrapper.find('section > dl').text()).not.toContain('Gaia source ID')
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import TooltipLabel from './TooltipLabel.vue'
 
 const props = defineProps<{
   name?: string
@@ -59,16 +60,18 @@ function handleLabelAction() {
         :key="term"
       >
         <dt>
-          <abbr
+          <TooltipLabel
             v-if="term === 'System diameter'"
             class="system-diameter-label"
-            :title="systemDiameterTooltip"
-          >{{ term }}</abbr>
-          <abbr
+            :label="term"
+            :tooltip="systemDiameterTooltip"
+          />
+          <TooltipLabel
             v-else-if="term === 'Distance from origin' && originName"
             class="origin-distance-label"
-            :title="`Map origin: ${originName}`"
-          >{{ term }}</abbr>
+            :label="term"
+            :tooltip="`Map origin: ${originName}`"
+          />
           <span v-else>{{ term }}</span>
         </dt>
         <dd>{{ detail }}</dd>
@@ -104,11 +107,12 @@ function handleLabelAction() {
           :key="term"
         >
           <dt>
-            <abbr
+            <TooltipLabel
               v-if="term === 'System diameter'"
               class="system-diameter-label"
-              :title="systemDiameterTooltip"
-            >{{ term }}</abbr>
+              :label="term"
+              :tooltip="systemDiameterTooltip"
+            />
             <span v-else>{{ term }}</span>
           </dt>
           <dd>{{ detail }}</dd>

@@ -17,7 +17,7 @@ describe('RoutePanel', () => {
     expect(wrapper.get('.route-panel').exists()).toBe(true)
   })
 
-  it('moves completed-route context into the header tooltip', () => {
+  it('moves completed-route context into the header tooltip', async () => {
     const wrapper = mount(RoutePanel, {
       props: {
         status: '',
@@ -28,7 +28,8 @@ describe('RoutePanel', () => {
       },
     })
 
-    expect(wrapper.get('.route-tooltip-label').attributes('title'))
+    await wrapper.get('.route-tooltip-label button').trigger('click')
+    expect(wrapper.get('.route-tooltip-label [role="tooltip"]').text())
       .toBe('Overall travel distance from the displayed Gaia coordinates.')
     expect(wrapper.find('.status').exists()).toBe(false)
   })

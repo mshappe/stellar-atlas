@@ -254,6 +254,7 @@ async function createLabel(sourceId: string, displayLabel: string) {
     const createdLabel = await createPersistentLabel(sourceId, displayLabel)
     labelCatalogLoadId += 1
     atlas.setLabelCatalog(addPersistentLabel(atlas.state.permanentLabels, createdLabel))
+    resetSearch()
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     labelMenuOpen.value = false
@@ -279,6 +280,7 @@ async function retireLabel() {
     await retirePersistentLabel(sourceId)
     labelCatalogLoadId += 1
     atlas.setLabelCatalog(removePersistentLabel(atlas.state.permanentLabels, sourceId))
+    resetSearch()
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     labelRemovalOpen.value = false

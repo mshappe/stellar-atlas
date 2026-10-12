@@ -15,7 +15,8 @@ RUN npm run build \
 
 FROM build AS development
 
-RUN chown -R node:node /app
+RUN mkdir -p /app/runtime \
+  && chown -R node:node /app
 USER node
 
 FROM node:24-bookworm-slim

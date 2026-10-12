@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import TooltipLabel from './TooltipLabel.vue'
+
 defineProps<{
   status: string
   tooltip?: string
@@ -13,11 +15,12 @@ const emit = defineEmits<{ clear: [] }>()
 <template>
   <section class="route-panel">
     <h2>
-      <abbr
+      <TooltipLabel
         v-if="tooltip"
         class="route-tooltip-label"
-        :title="tooltip"
-      >Point-to-point distance</abbr>
+        label="Point-to-point distance"
+        :tooltip="tooltip"
+      />
       <span v-else>Point-to-point distance</span>
     </h2>
     <p

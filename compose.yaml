@@ -33,7 +33,7 @@ services:
       - .env
     environment:
       PORT: 3000
-      PUBLIC_ORIGIN: http://localhost:5173
+      PUBLIC_ORIGIN: http://localhost:${DEV_HOST_PORT:-5173}
       LABEL_DATABASE_PATH: /app/runtime/labels.sqlite
       SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
     command: node --watch --import tsx server/main.ts
@@ -41,7 +41,6 @@ services:
       - .:/app
       - dev-node-modules:/app/node_modules
       - atlas-labels:/app/runtime
-      - dev-source-index:/app/data
 
   vite:
     build:
@@ -63,4 +62,3 @@ services:
 volumes:
   atlas-labels:
   dev-node-modules:
-  dev-source-index:

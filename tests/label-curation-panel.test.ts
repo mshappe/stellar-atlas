@@ -100,6 +100,24 @@ describe('LabelCurationPanel', () => {
     expect(wrapper.emitted('retire')).toHaveLength(1)
   })
 
+  it('requires an authenticated maintainer before offering label removal', async () => {
+    const wrapper = mount(LabelCurationPanel, {
+      props: {
+        ...defaultProps,
+        existingLabel: 'Verified Host',
+        session: { authenticated: false, maintainer: false },
+      },
+    })
+
+    expect(wrapper.find('.label-removal-confirm').exists()).toBe(false)
+    await wrapper.get('.measure-clear').trigger('click')
+    expect(wrapper.emitted('signIn')).toHaveLength(1)
+
+    await wrapper.setProps({ session: { authenticated: true, maintainer: false, login: 'reader' } })
+    expect(wrapper.find('.label-removal-confirm').exists()).toBe(false)
+    expect(wrapper.text()).toContain('cannot curate permanent labels')
+  })
+
   it('announces session errors and offers candidate retries without hiding a label-write form', async () => {
     const sessionError = mount(LabelCurationPanel, {
       props: {

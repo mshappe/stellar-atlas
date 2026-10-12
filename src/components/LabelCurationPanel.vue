@@ -250,23 +250,48 @@ function closeRemovalDialog() {
     >
       {{ logoutError }}
     </p>
-    <p>
-      Remove {{ existingLabel }} as the permanent label for {{ sourceName }}?
-    </p>
     <p
-      v-if="retirementError"
+      v-if="session === undefined"
       class="status"
       role="status"
     >
-      {{ retirementError }}
+      {{ sessionStatus || 'Checking maintainer session…' }}
     </p>
-    <button
-      class="label-removal-confirm"
-      type="button"
-      :disabled="retiringLabel"
-      @click="emit('retire')"
+    <template v-else-if="!session.authenticated">
+      <p>Sign in with an authorized GitHub account to remove this permanent label.</p>
+      <button
+        class="measure-clear"
+        type="button"
+        @click="emit('signIn')"
+      >
+        Sign in with GitHub
+      </button>
+    </template>
+    <p
+      v-else-if="!session.maintainer"
+      class="status"
     >
-      {{ retiringLabel ? 'Removing permanent label…' : 'Remove permanent label' }}
-    </button>
+      Signed in as {{ session.login }}. This account cannot curate permanent labels.
+    </p>
+    <template v-else>
+      <p>
+        Remove {{ existingLabel }} as the permanent label for {{ sourceName }}?
+      </p>
+      <p
+        v-if="retirementError"
+        class="status"
+        role="status"
+      >
+        {{ retirementError }}
+      </p>
+      <button
+        class="label-removal-confirm"
+        type="button"
+        :disabled="retiringLabel"
+        @click="emit('retire')"
+      >
+        {{ retiringLabel ? 'Removing permanent label…' : 'Remove permanent label' }}
+      </button>
+    </template>
   </dialog>
 </template>

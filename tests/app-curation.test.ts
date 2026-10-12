@@ -53,7 +53,11 @@ function mountApp() {
           props: ['selectedCatalogKey', 'importStatus', 'projectionEpoch'],
           template: '<div />',
         },
-        CatalogSearch: true,
+        CatalogSearch: {
+          name: 'CatalogSearch',
+          props: ['results', 'status'],
+          template: '<div />',
+        },
         ReferenceFramePanel: true,
         RoutePanel: true,
         SelectionPanel,
@@ -657,6 +661,11 @@ describe('App label curation', () => {
 
     const selection = wrapper.findComponent(SelectionPanel)
     expect(selection.props('labelAction')).toBe('remove')
+    const search = wrapper.findComponent({ name: 'CatalogSearch' })
+    search.vm.$emit('search', 'Verified Host')
+    await flushPromises()
+    expect(search.props('results')).toHaveLength(1)
+
     selection.vm.$emit('requestLabelRemoval')
     await flushPromises()
 
@@ -672,6 +681,9 @@ describe('App label curation', () => {
     expect(selection.props('labelAction')).toBe('add')
     expect(curation.props('removalOpen')).toBe(false)
     expect(wrapper.findComponent({ name: 'AtlasScene' }).props('permanentLabels')).toEqual({})
+    const refreshedSearch = wrapper.findComponent({ name: 'CatalogSearch' })
+    expect(refreshedSearch.props('results')).toEqual([])
+    expect(refreshedSearch.props('status')).toBe('Searches Gaia DR3 IDs, NASA host and planet identifiers, and configured labels.')
     expect(curation.props('candidates')).toMatchObject({
       sourceId: firstSource.sourceId,
       candidates: [{ displayLabel: 'Verified Host' }],
