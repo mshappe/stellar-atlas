@@ -81,7 +81,8 @@ describe('App label curation', () => {
     const wrapper = mountApp()
     await flushPromises()
 
-    expect(wrapper.find('.scene-hint').text()).toBe('Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop')
+    expect(wrapper.find('header .interaction-hint').text()).toBe('Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop')
+    expect(wrapper.find('.scene-shell .interaction-hint').exists()).toBe(false)
   })
 
   it('displays selected-source distances from the active map origin in light-years', async () => {

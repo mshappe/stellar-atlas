@@ -490,6 +490,9 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           Gaia DR3 spatial viewer
         </p>
         <h1>Stellar Atlas</h1>
+        <p class="interaction-hint">
+          Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
+        </p>
       </div>
       <p class="catalog-state">
         {{ catalogState }}
@@ -566,9 +569,6 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @pop-route="popRoute"
           @projection-rendered="finishProjectionRender"
         />
-        <p class="scene-hint">
-          Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
-        </p>
       </div>
     </section>
     <footer>

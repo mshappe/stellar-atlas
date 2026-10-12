@@ -41,6 +41,12 @@ h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1; }
 h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
 .catalog-state { margin: 0; color: #aab8cc; }
+.interaction-hint {
+  max-width: 52rem;
+  margin: .6rem 0 0;
+  color: #aab8cc;
+  font-size: .8rem;
+}
 
 .workspace {
   min-height: 0;
@@ -394,17 +400,6 @@ dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
   border-color: #fff0bd;
   background: #ffd56a;
 }
-.scene-hint {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  left: 1rem;
-  margin: 0;
-  color: #aab8cc;
-  font-size: .8rem;
-  pointer-events: none;
-}
-
 footer { align-items: center; color: #8da0bc; font-size: .75rem; }
 a { color: #9ec3ff; }
 
@@ -443,12 +438,7 @@ a { color: #9ec3ff; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
   .field-of-view-status { left: .75rem; bottom: .75rem; }
-  .scene-hint {
-    top: .75rem;
-    right: .75rem;
-    left: .75rem;
-    font-size: .72rem;
-  }
+  .interaction-hint { font-size: .72rem; }
 }
 
 @media (max-width: 420px) {
