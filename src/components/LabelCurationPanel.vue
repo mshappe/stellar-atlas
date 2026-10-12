@@ -14,13 +14,16 @@ const props = defineProps<{
   candidateError: string
   creationError: string
   retirementError: string
+  logoutError: string
   loadingCandidates: boolean
   creatingLabel: boolean
   retiringLabel: boolean
+  signingOut: boolean
 }>()
 
 const emit = defineEmits<{
   signIn: []
+  signOut: []
   create: [sourceId: string, displayLabel: string]
   retryCandidates: []
   retire: []
@@ -77,14 +80,33 @@ function closeRemovalDialog() {
   >
     <div class="selection-details-header">
       <h2>Permanent labels</h2>
-      <button
-        class="selection-details-close"
-        type="button"
-        @click="closeCurationDialog"
-      >
-        Close
-      </button>
+      <div class="dialog-actions">
+        <button
+          v-if="session?.authenticated"
+          class="selection-details-close"
+          type="button"
+          :disabled="signingOut"
+          @click="emit('signOut')"
+        >
+          {{ signingOut ? 'Signing out…' : 'Sign out' }}
+        </button>
+        <button
+          class="selection-details-close"
+          type="button"
+          :disabled="signingOut"
+          @click="closeCurationDialog"
+        >
+          Close
+        </button>
+      </div>
     </div>
+    <p
+      v-if="logoutError"
+      class="status"
+      role="status"
+    >
+      {{ logoutError }}
+    </p>
     <p
       v-if="session === undefined"
       class="status"
@@ -201,15 +223,33 @@ function closeRemovalDialog() {
   >
     <div class="selection-details-header">
       <h2>Remove permanent label?</h2>
-      <button
-        class="selection-details-close"
-        type="button"
-        :disabled="retiringLabel"
-        @click="closeRemovalDialog"
-      >
-        Cancel
-      </button>
+      <div class="dialog-actions">
+        <button
+          v-if="session?.authenticated"
+          class="selection-details-close"
+          type="button"
+          :disabled="retiringLabel || signingOut"
+          @click="emit('signOut')"
+        >
+          {{ signingOut ? 'Signing out…' : 'Sign out' }}
+        </button>
+        <button
+          class="selection-details-close"
+          type="button"
+          :disabled="retiringLabel || signingOut"
+          @click="closeRemovalDialog"
+        >
+          Cancel
+        </button>
+      </div>
     </div>
+    <p
+      v-if="logoutError"
+      class="status"
+      role="status"
+    >
+      {{ logoutError }}
+    </p>
     <p>
       Remove {{ existingLabel }} as the permanent label for {{ sourceName }}?
     </p>

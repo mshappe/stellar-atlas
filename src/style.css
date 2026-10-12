@@ -168,6 +168,10 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   margin-bottom: 1rem;
 }
 .selection-details-header h2 { margin: 0; }
+.dialog-actions {
+  display: flex;
+  gap: .5rem;
+}
 .selection-details-close {
   padding: .4rem .6rem;
   border: 1px solid #3f5e89;

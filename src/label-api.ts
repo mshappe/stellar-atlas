@@ -26,6 +26,10 @@ export async function loadAtlasSession(): Promise<AtlasSession> {
   return value
 }
 
+export async function logoutAtlasSession(): Promise<void> {
+  await requestJson('/api/auth/logout', { method: 'POST' })
+}
+
 export async function loadLabelCandidates(sourceId: string): Promise<LabelCandidates> {
   const value = await requestJson(`/api/labels/candidates?${new URLSearchParams({ sourceId })}`)
   if (!isLabelCandidates(value)) throw new Error('The label candidate API response is invalid.')

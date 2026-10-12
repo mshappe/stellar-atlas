@@ -16,6 +16,7 @@ import {
   loadAtlasSession,
   loadLabelCandidates,
   loadPersistentLabelCatalog,
+  logoutAtlasSession,
   retirePersistentLabel,
   type AtlasSession,
   type LabelCandidates,
@@ -36,9 +37,11 @@ const labelCandidates = ref<LabelCandidates>()
 const candidateError = ref('')
 const creationError = ref('')
 const retirementError = ref('')
+const logoutError = ref('')
 const isLoadingCandidates = ref(false)
 const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
 const retiringLabelSourceIds = ref<ReadonlySet<string>>(new Set())
+const signingOut = ref(false)
 const labelMenuOpen = ref(false)
 const labelRemovalOpen = ref(false)
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
@@ -197,6 +200,23 @@ async function refreshSession() {
     session.value = await loadAtlasSession()
   } catch (error) {
     sessionStatus.value = `Maintainer session is unavailable: ${error instanceof Error ? error.message : 'unknown error'}.`
+  }
+}
+
+async function signOutFromCuration() {
+  if (signingOut.value) return
+  logoutError.value = ''
+  signingOut.value = true
+  try {
+    await logoutAtlasSession()
+    session.value = { authenticated: false, maintainer: false }
+    labelCandidates.value = undefined
+    labelMenuOpen.value = false
+    labelRemovalOpen.value = false
+  } catch (error) {
+    logoutError.value = `Could not sign out: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    signingOut.value = false
   }
 }
 
@@ -586,10 +606,13 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :candidate-error="candidateError"
           :creation-error="creationError"
           :retirement-error="retirementError"
+          :logout-error="logoutError"
           :loading-candidates="isLoadingCandidates"
           :creating-label="isCreatingLabel"
           :retiring-label="isRetiringLabel"
+          :signing-out="signingOut"
           @sign-in="signInForCuration"
+          @sign-out="signOutFromCuration"
           @create="createLabel"
           @retry-candidates="refreshLabelCandidates"
           @retire="retireLabel"

@@ -105,6 +105,16 @@ function deleteLabel(baseUrl: string, requestedSourceId = sourceId, options: { c
   })
 }
 
+function postLogout(baseUrl: string, options: { cookie?: string, origin?: string } = {}) {
+  return fetch(`${baseUrl}/api/auth/logout`, {
+    method: 'POST',
+    headers: {
+      ...(options.cookie ? { Cookie: options.cookie } : {}),
+      ...(options.origin ? { Origin: options.origin } : {}),
+    },
+  })
+}
+
 describe('API', () => {
   it('serves public labels and reports session privileges', async () => {
     const { server } = startApiServer()
@@ -135,6 +145,21 @@ describe('API', () => {
     expect((await postLabel(baseUrl, { cookie: `stellar_atlas_session=${nonMaintainer}`, origin })).status).toBe(403)
     expect((await postLabel(baseUrl, { cookie: sessionCookie })).status).toBe(403)
     expect((await postLabel(baseUrl, { cookie: sessionCookie, origin: 'https://attacker.example' })).status).toBe(403)
+  })
+
+  it('clears the signed session cookie through a same-origin logout request', async () => {
+    const { server } = startApiServer()
+    const baseUrl = await listen(server)
+
+    expect((await postLogout(baseUrl, { cookie: sessionCookie })).status).toBe(403)
+
+    const response = await postLogout(baseUrl, { cookie: sessionCookie, origin })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ authenticated: false, maintainer: false })
+    expect(response.headers.getSetCookie()).toEqual(expect.arrayContaining([
+      expect.stringContaining('stellar_atlas_session=; Max-Age=0'),
+    ]))
   })
 
   it('returns verified label candidates only to maintainers', async () => {

@@ -15,9 +15,11 @@ const defaultProps = {
   candidateError: '',
   creationError: '',
   retirementError: '',
+  logoutError: '',
   loadingCandidates: false,
   creatingLabel: false,
   retiringLabel: false,
+  signingOut: false,
 }
 
 describe('LabelCurationPanel', () => {
@@ -52,6 +54,16 @@ describe('LabelCurationPanel', () => {
     await wrapper.get('form').trigger('submit')
 
     expect(wrapper.emitted('create')).toEqual([['1234567890123456789', 'Verified Host']])
+  })
+
+  it('offers authenticated maintainers a sign-out action', async () => {
+    const wrapper = mount(LabelCurationPanel, { props: defaultProps })
+    const signOut = wrapper.findAll('button').find((button) => button.text() === 'Sign out')
+
+    expect(signOut).toBeDefined()
+    await signOut?.trigger('click')
+
+    expect(wrapper.emitted('signOut')).toHaveLength(1)
   })
 
   it('opens a native dialog for label candidates', async () => {

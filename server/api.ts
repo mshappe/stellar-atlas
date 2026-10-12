@@ -38,6 +38,11 @@ export function createApiServer(config: ApiConfig) {
           login: session?.login,
         })
       }
+      if (request.method === 'POST' && url.pathname === '/api/auth/logout') {
+        if (!isSameOrigin(request, config.publicOrigin)) return sendJson(response, 403, { error: 'Cross-origin logout is not allowed.' })
+        clearCookie(response, SESSION_COOKIE)
+        return sendJson(response, 200, { authenticated: false, maintainer: false })
+      }
       if (request.method === 'GET' && url.pathname === '/api/labels/candidates') {
         const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSigningSecret)
         if (!session || !config.maintainers.has(session.login)) {
