@@ -14,6 +14,7 @@ const emit = defineEmits<{
 }>()
 
 const detailsDialog = ref<HTMLDialogElement>()
+const systemDiameterTooltip = 'Twice the largest known planetary apoastron: 2 × max[a × (1 + e)]. Excludes stellar companions, debris disks, unreported planets, and planets without both orbital measurements.'
 
 function openDetails() {
   detailsDialog.value?.showModal()
@@ -56,7 +57,14 @@ function handleLabelAction() {
         v-for="[term, detail] in summaryFields"
         :key="term"
       >
-        <dt>{{ term }}</dt>
+        <dt>
+          <abbr
+            v-if="term === 'System diameter'"
+            class="system-diameter-label"
+            :title="systemDiameterTooltip"
+          >{{ term }}</abbr>
+          <span v-else>{{ term }}</span>
+        </dt>
         <dd>{{ detail }}</dd>
       </div>
     </dl>
@@ -89,7 +97,14 @@ function handleLabelAction() {
           v-for="[term, detail] in detailFields"
           :key="term"
         >
-          <dt>{{ term }}</dt>
+          <dt>
+            <abbr
+              v-if="term === 'System diameter'"
+              class="system-diameter-label"
+              :title="systemDiameterTooltip"
+            >{{ term }}</abbr>
+            <span v-else>{{ term }}</span>
+          </dt>
           <dd>{{ detail }}</dd>
         </div>
       </dl>

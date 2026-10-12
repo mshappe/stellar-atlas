@@ -55,7 +55,7 @@ const SELECTED_SOURCE_SUMMARY_TERMS = [
   'Catalog category',
   'Confirmed planets',
   'Planet name(s)',
-  'Known planetary-system diameter (light-seconds)',
+  'System diameter',
   'NASA host identifier(s)',
 ] as const
 let projectionProgressStartedAt = 0
@@ -411,7 +411,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
       ['Confirmed planets', String(object.planetCount)],
       ['Planet name(s)', object.planetNames],
       ['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)],
-      ['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)],
+      ['System diameter', `${formatMeasurement(object.knownSystemDiameterLightSeconds)} ls`],
       ['NASA host identifier(s)', object.hostIdentifier],
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
@@ -447,7 +447,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   if (object.planetNames) fields.push(['Planet name(s)', object.planetNames])
   if (object.discoveryMethods) fields.push(['Discovery method(s)', object.discoveryMethods])
   if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)])
-  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)])
+  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['System diameter', `${formatMeasurement(object.knownSystemDiameterLightSeconds)} ls`])
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
   if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])

@@ -18,6 +18,7 @@ const firstSource: GaiaRow = {
   ra: 1,
   dec: 0,
   parallax: 100,
+  knownSystemDiameterLightSeconds: 1278.45,
 }
 
 const secondSource: GaiaRow = {
@@ -168,6 +169,7 @@ describe('App label curation', () => {
     expect(wrapper.text()).not.toContain('Distance from map origin (pc)')
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
       ['Distance from map origin (ly)', '0.569'],
+      ['System diameter', '1,278.45 ls'],
     ])
   })
 
@@ -193,7 +195,7 @@ describe('App label curation', () => {
       ['Catalog category', 'Solar System reference star'],
       ['Confirmed planets', '8'],
       ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
-      ['Known planetary-system diameter (light-seconds)', '30,268.159'],
+      ['System diameter', '30,268.159 ls'],
       ['NASA host identifier(s)', 'Sun (JPL Horizons target 10)'],
     ])
   })
