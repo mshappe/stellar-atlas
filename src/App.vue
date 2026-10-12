@@ -567,7 +567,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @projection-rendered="finishProjectionRender"
         />
         <p class="scene-hint">
-          Drag to orbit · scroll to zoom · double-click a point for its Gaia values
+          Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
         </p>
       </div>
     </section>

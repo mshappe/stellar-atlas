@@ -50,6 +50,13 @@ It serves the UI and API together at `http://localhost:3000`. Configure the GitH
 
 The `atlas-labels` named volume stores only the writable label database. The image builds the read-only source-verification index at `/app/data/label-source-index.sqlite`; do not mount a volume over `/app/data`, or it will hide that index. Stop the service with `docker compose down`; preserve labels by leaving the named volume intact.
 
+Run tests and linting in the Docker build environment:
+
+```sh
+docker compose run --rm test
+docker compose run --rm test npm run lint
+```
+
 To reconstruct ignored local artifacts later, rerun `npm run setup:local` if `.env` is absent, or regenerate only the source index with:
 
 ```sh

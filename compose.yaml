@@ -15,5 +15,13 @@ services:
       - atlas-labels:/app/runtime
     restart: unless-stopped
 
+  test:
+    build:
+      context: .
+      target: build
+    profiles:
+      - test
+    command: npm test
+
 volumes:
   atlas-labels:

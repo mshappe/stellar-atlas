@@ -66,6 +66,24 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('documents current map interactions', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.find('.scene-hint').text()).toBe('Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop')
+  })
+
   it('displays selected-source distances from the active map origin in light-years', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)
