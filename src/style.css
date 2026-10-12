@@ -116,6 +116,7 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 .route-panel > dl dd,
 #route-hop-details dt,
 #route-hop-details dd { line-height: 1.25; }
+.route-panel > .status { margin-bottom: .4rem; }
 .selected-source-panel dl div { padding: 0; }
 .selected-source-panel dt,
 .selected-source-panel dd { line-height: 1.25; }
