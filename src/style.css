@@ -376,7 +376,7 @@ dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
 .reference-frame-panel h2 { font-size: .8rem; }
 .reference-frame-panel dl div {
   gap: .75rem;
-  padding: .22rem 0;
+  padding: .1rem 0;
 }
 .reference-frame-panel dt,
 .reference-frame-panel dd {
