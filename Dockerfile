@@ -13,6 +13,11 @@ COPY . .
 RUN npm run build \
   && python3 scripts/build_label_source_index.py
 
+FROM build AS development
+
+RUN chown -R node:node /app
+USER node
+
 FROM node:24-bookworm-slim
 
 WORKDIR /app

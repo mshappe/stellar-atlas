@@ -50,6 +50,14 @@ It serves the UI and API together at `http://localhost:3000`. Configure the GitH
 
 The `atlas-labels` named volume stores only the writable label database. The image builds the read-only source-verification index at `/app/data/label-source-index.sqlite`; do not mount a volume over `/app/data`, or it will hide that index. Stop the service with `docker compose down`; preserve labels by leaving the named volume intact.
 
+For live-reload development, run Vite and the API as separate containerized services:
+
+```sh
+docker compose --profile dev up vite
+```
+
+Open `http://localhost:5173`. Vite watches the mounted source tree and proxies `/api` to the `api` service; configure the GitHub OAuth app with `http://localhost:5173` as its homepage and `http://localhost:5173/api/auth/github/callback` as its callback URL. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
+
 Run tests and linting in the Docker build environment:
 
 ```sh

@@ -23,5 +23,44 @@ services:
       - test
     command: npm test
 
+  api:
+    build:
+      context: .
+      target: development
+    profiles:
+      - dev
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      PUBLIC_ORIGIN: http://localhost:5173
+      LABEL_DATABASE_PATH: /app/runtime/labels.sqlite
+      SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
+    command: node --import tsx server/main.ts
+    volumes:
+      - .:/app
+      - dev-node-modules:/app/node_modules
+      - atlas-labels:/app/runtime
+      - dev-source-index:/app/data
+
+  vite:
+    build:
+      context: .
+      target: development
+    profiles:
+      - dev
+    environment:
+      API_PROXY_TARGET: http://api:3000
+    depends_on:
+      - api
+    command: npm exec vite -- --host 0.0.0.0
+    ports:
+      - "${DEV_HOST_PORT:-5173}:5173"
+    volumes:
+      - .:/app
+      - dev-node-modules:/app/node_modules
+
 volumes:
   atlas-labels:
+  dev-node-modules:
+  dev-source-index:
