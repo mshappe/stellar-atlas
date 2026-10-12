@@ -442,7 +442,13 @@ a { color: #9ec3ff; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
   .field-of-view-status { left: .75rem; bottom: .75rem; }
-  .scene-hint { right: .75rem; bottom: 2.75rem; left: .75rem; font-size: .72rem; }
+  .scene-hint {
+    top: .75rem;
+    right: .75rem;
+    bottom: auto;
+    left: .75rem;
+    font-size: .72rem;
+  }
 }
 
 @media (max-width: 420px) {
