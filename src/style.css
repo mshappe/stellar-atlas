@@ -590,6 +590,11 @@ a { color: #9ec3ff; }
   }
   .catalog-state { justify-self: end; text-align: right; }
   .header-actions { justify-content: end; }
+  .selected-source-panel dl div {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    gap: .75rem;
+  }
+  .selected-source-panel dd { text-align: left; }
   .interaction-hint { text-align: left; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
