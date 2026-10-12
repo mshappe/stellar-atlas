@@ -123,13 +123,13 @@ Selected-source and measurement display names expand standard Bayer and Flamstee
 
 ## Known planetary-system diameter
 
-When NASA's `PSCompPars` table reports both semi-major axis `a` and eccentricity `e` for at least one confirmed planet, the selected-source panel shows a known planetary-system diameter in AU and light-seconds:
+When NASA's `PSCompPars` table reports both semi-major axis `a` and eccentricity `e` for at least one confirmed planet, the selected-source panel shows a known planetary-system diameter in AU and a `System diameter` value in light-seconds (`ls`):
 
 ```text
 diameter = 2 × max[a × (1 + e)]
 ```
 
-This is the diameter of the largest **known planetary orbit** by apoastron, not a claim about the full physical system. It excludes stellar companions, debris disks, unreported planets, and planets without both required orbital elements. The generated host catalog contains values for 815 systems; the query and exact conversion are recorded in the host-catalog provenance.
+This is the diameter of the largest **known planetary orbit** by apoastron, not a claim about the full physical system. It excludes stellar companions, debris disks, unreported planets, and planets without both required orbital elements. Sources without the required published inputs show `System diameter` as `Unavailable`; no value is inferred. The generated host catalog contains values for 815 systems; the query and exact conversion are recorded in the host-catalog provenance.
 
 ## Point-to-point distances
 

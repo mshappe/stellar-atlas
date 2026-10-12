@@ -29,7 +29,7 @@ describe('SelectionPanel', () => {
       props: {
         name: 'TRAPPIST-1',
         summaryFields: [
-          ['Distance from map origin (ly)', '40.7'],
+          ['Distance from map origin', '40.7 ly'],
           ['System diameter', '1,278.45 ls'],
         ],
         detailFields: [['Gaia source ID', '2635476908753563008']],
@@ -37,7 +37,8 @@ describe('SelectionPanel', () => {
     })
 
     expect(wrapper.get('.selected-source-panel').exists()).toBe(true)
-    expect(wrapper.find('section > dl').text()).toContain('Distance from map origin (ly)')
+    expect(wrapper.find('section > dl').text()).toContain('Distance from map origin')
+    expect(wrapper.find('section > dl').text()).toContain('40.7 ly')
     expect(wrapper.get('.system-diameter-label').attributes('title')).toContain('largest known planetary apoastron')
     expect(wrapper.find('section > dl').text()).toContain('1,278.45 ls')
     expect(wrapper.find('section > dl').text()).not.toContain('Gaia source ID')
