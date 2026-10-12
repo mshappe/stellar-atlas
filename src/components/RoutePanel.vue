@@ -10,7 +10,7 @@ const emit = defineEmits<{ clear: [] }>()
 </script>
 
 <template>
-  <section>
+  <section class="route-panel">
     <h2>Point-to-point distance</h2>
     <p class="status">
       {{ status }}
