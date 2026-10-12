@@ -116,7 +116,10 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 .route-panel > dl dd,
 #route-hop-details dt,
 #route-hop-details dd { line-height: 1.25; }
-.selected-source-panel dl div { padding: 0; }
+.selected-source-panel dl div {
+  position: relative;
+  padding: 0;
+}
 .selected-source-panel dt,
 .selected-source-panel dd { line-height: 1.25; }
 
@@ -473,6 +476,12 @@ dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
   white-space: normal;
 }
 .tooltip-label-open .tooltip-label-content { display: block; }
+.selected-source-panel > dl .tooltip-label { position: static; }
+.selected-source-panel > dl .tooltip-label-content {
+  left: 0;
+  width: min(20rem, calc(100% - .5rem));
+  max-width: none;
+}
 .reference-frame-panel dl div {
   gap: .75rem;
   padding: .1rem 0;
