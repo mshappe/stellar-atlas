@@ -448,8 +448,10 @@ dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
   color: inherit;
   font: inherit;
   cursor: help;
+  text-align: left;
   text-decoration: underline dotted;
   text-underline-offset: .15em;
+  white-space: nowrap;
 }
 .tooltip-label-content {
   display: none;
