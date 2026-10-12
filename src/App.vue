@@ -533,6 +533,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
         <p class="catalog-state">
           {{ catalogState }}
         </p>
+        <ReferenceFramePanel />
         <CatalogControls
           :selected-catalog-key="selectedBundledCatalogKey"
           :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
@@ -598,7 +599,6 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :has-endpoints="Boolean(atlas.state.measurementEndpoints.length)"
           @clear="clearRoute"
         />
-        <ReferenceFramePanel />
       </aside>
       <div class="scene-shell">
         <AtlasScene

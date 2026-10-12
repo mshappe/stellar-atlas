@@ -85,7 +85,7 @@ describe('App label curation', () => {
       .toBe(wrapper.find('.sidebar').element.firstElementChild)
   })
 
-  it('places catalog settings in the header instead of the sidebar', async () => {
+  it('places reference information and settings in the header instead of the sidebar', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)
       if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
@@ -101,7 +101,9 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.find('header').findComponent({ name: 'CatalogControls' }).exists()).toBe(true)
+    expect(wrapper.find('header').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(true)
     expect(wrapper.find('.sidebar').findComponent({ name: 'CatalogControls' }).exists()).toBe(false)
+    expect(wrapper.find('.sidebar').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(false)
   })
 
   it('documents current map interactions', async () => {

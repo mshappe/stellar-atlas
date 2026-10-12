@@ -193,6 +193,16 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 55%);
 }
 .catalog-settings-dialog::backdrop { background: rgb(2 7 17 / 72%); }
+.reference-frame-dialog {
+  width: min(32rem, calc(100vw - 2rem));
+  max-height: min(80svh, 42rem);
+  border: 1px solid #3f5e89;
+  border-radius: .55rem;
+  background: #0a1525;
+  color: #e8edf8;
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 55%);
+}
+.reference-frame-dialog::backdrop { background: rgb(2 7 17 / 72%); }
 .catalog-settings h3 {
   margin: 0 0 .6rem;
   color: #e8edf8;
@@ -244,7 +254,8 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   font-weight: 650;
 }
 .label-toggle:hover { background: #162943; }
-.settings-toggle {
+.settings-toggle,
+.info-toggle {
   display: grid;
   width: 2rem;
   height: 2rem;
@@ -254,10 +265,20 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   background: #0e2038;
   color: #dbe9ff;
   cursor: pointer;
+}
+.settings-toggle {
   font-size: 1.1rem;
   line-height: 1;
 }
-.settings-toggle:hover { background: #162943; }
+.info-toggle {
+  border-radius: 50%;
+  font-family: Georgia, serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.settings-toggle:hover,
+.info-toggle:hover { background: #162943; }
 .caveat { margin-bottom: 0; color: #94a8c4 !important; }
 code { color: #cee0ff; }
 
@@ -373,7 +394,6 @@ dl { margin: 0; }
 dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; padding: .35rem 0; }
 dt { color: #89aeea !important; }
 dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
-.reference-frame-panel h2 { font-size: .8rem; }
 .reference-frame-panel dl div {
   gap: .75rem;
   padding: .1rem 0;
