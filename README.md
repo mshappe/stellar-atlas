@@ -50,6 +50,22 @@ It serves the UI and API together at `http://localhost:3000`. Configure the GitH
 
 The `atlas-labels` named volume stores only the writable label database. The image builds the read-only source-verification index at `/app/data/label-source-index.sqlite`; do not mount a volume over `/app/data`, or it will hide that index. Stop the service with `docker compose down`; preserve labels by leaving the named volume intact.
 
+For live-reload development, run Vite and the API as separate containerized services:
+
+```sh
+docker compose --profile dev up vite
+```
+
+Open `http://localhost:5173` by default. Vite watches the mounted client source files and proxies `/api` to the `api` service; the API service also restarts automatically when its server or shared source files change. The development services mount only live-reload inputs, keeping the image-built source-verification index at `/app/data/label-source-index.sqlite` available even in a fresh checkout. Configure the GitHub OAuth app homepage as `http://localhost:5173` and its callback URL as `http://localhost:5173/api/auth/github/callback`. If you set `DEV_HOST_PORT` to another value, substitute that port in both URLs. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
+
+Run tests and linting in the Docker build environment:
+
+```sh
+docker compose build test
+docker compose run --rm test
+docker compose run --rm test npm run lint
+```
+
 To reconstruct ignored local artifacts later, rerun `npm run setup:local` if `.env` is absent, or regenerate only the source index with:
 
 ```sh
@@ -62,7 +78,7 @@ The browser UI is a Vue 3 application. `src/App.vue` owns catalog loading, CSV v
 
 `src/components/AtlasScene.vue` is the imperative Three.js boundary. It receives the raw active catalog, origin, label IDs, and route endpoints as props; it emits selection, focus, and route-pop intents. It owns WebGL/CSS2D renderer lifecycle, point geometry, labels, picking, the SVG route overlay, resizing, and resource disposal. Sidebar components render the declarative catalog controls, search, selection, route, and reference-frame panels. The astronomy calculations, radius filtering, catalog search, label behavior, and route arithmetic remain in the test-covered `src/catalog.ts` utility module.
 
-Permanent labels are loaded at runtime from the self-hosted label API. [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json) remains the evidence-backed seed catalog used by the server, rather than the browser's runtime authority. Visitors are read-only. An allowlisted GitHub-authenticated maintainer may select a Gaia source and choose only a server-verified NASA hostname or exact Gaia DR3 designation; the server independently verifies and audits every write. Search-result labels remain temporary and visually distinct.
+Permanent labels are loaded at runtime from the self-hosted label API. [`public/prominent-star-labels.provenance.json`](public/prominent-star-labels.provenance.json) remains the evidence-backed seed catalog used by the server, rather than the browser's runtime authority. Visitors are read-only. An allowlisted GitHub-authenticated maintainer may select a Gaia source and choose only a server-verified NASA hostname or exact Gaia DR3 designation; the server independently verifies and audits every write. Maintainers may also retire any permanent label, including an evidence-backed seed, through a confirmation dialog; retirement remains in the append-only audit history and prevents a retired seed from returning on server restart. A retired source may be re-labeled only by selecting a currently server-verified candidate. Search-result labels remain temporary and visually distinct.
 
 ## Permanent-label source index
 
@@ -108,17 +124,17 @@ Selected-source and measurement display names expand standard Bayer and Flamstee
 
 ## Known planetary-system diameter
 
-When NASA's `PSCompPars` table reports both semi-major axis `a` and eccentricity `e` for at least one confirmed planet, the selected-source panel shows a known planetary-system diameter in AU and light-seconds:
+When NASA's `PSCompPars` table reports both semi-major axis `a` and eccentricity `e` for at least one confirmed planet, the selected-source panel shows a known planetary-system diameter in AU and a `System diameter` value in light-seconds (`ls`):
 
 ```text
 diameter = 2 × max[a × (1 + e)]
 ```
 
-This is the diameter of the largest **known planetary orbit** by apoastron, not a claim about the full physical system. It excludes stellar companions, debris disks, unreported planets, and planets without both required orbital elements. The generated host catalog contains values for 815 systems; the query and exact conversion are recorded in the host-catalog provenance.
+This is the diameter of the largest **known planetary orbit** by apoastron, not a claim about the full physical system. It excludes stellar companions, debris disks, unreported planets, and planets without both required orbital elements. Sources without the required published inputs show `System diameter` as `Unavailable`; no value is inferred. The generated host catalog contains values for 815 systems; the query and exact conversion are recorded in the host-catalog provenance.
 
 ## Point-to-point distances
 
-Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance in light-years, light-megaseconds, and parsecs; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same Cartesian positions rendered by the map: J2016.0 Gaia reciprocal-parallax coordinates and Sol's JPL Horizons state in the default view, or the selected common projected epoch in projected mode. This is not an uncertainty-aware separation estimate.
+Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance as `… ly / … lMs`; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond (`lMs`) is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same Cartesian positions rendered by the map: J2016.0 Gaia reciprocal-parallax coordinates and Sol's JPL Horizons state in the default view, or the selected common projected epoch in projected mode. This is not an uncertainty-aware separation estimate.
 
 ## Complete Gaia comparison layer
 

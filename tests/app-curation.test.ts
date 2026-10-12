@@ -18,6 +18,7 @@ const firstSource: GaiaRow = {
   ra: 1,
   dec: 0,
   parallax: 100,
+  knownSystemDiameterLightSeconds: 1278.45,
 }
 
 const secondSource: GaiaRow = {
@@ -52,7 +53,11 @@ function mountApp() {
           props: ['selectedCatalogKey', 'importStatus', 'projectionEpoch'],
           template: '<div />',
         },
-        CatalogSearch: true,
+        CatalogSearch: {
+          name: 'CatalogSearch',
+          props: ['results', 'status'],
+          template: '<div />',
+        },
         ReferenceFramePanel: true,
         RoutePanel: true,
         SelectionPanel,
@@ -66,6 +71,87 @@ afterEach(() => {
 })
 
 describe('App label curation', () => {
+  it('places star search first in the sidebar', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.find('.sidebar').findAllComponents({ name: 'CatalogSearch' })[0].element)
+      .toBe(wrapper.find('.sidebar').element.firstElementChild)
+  })
+
+  it('places reference information and settings in the header instead of the sidebar', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.find('.header-meta').findComponent({ name: 'CatalogControls' }).exists()).toBe(true)
+    expect(wrapper.find('.header-meta').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(true)
+    expect(wrapper.find('.sidebar').findComponent({ name: 'CatalogControls' }).exists()).toBe(false)
+    expect(wrapper.find('.sidebar').findComponent({ name: 'ReferenceFramePanel' }).exists()).toBe(false)
+    expect(wrapper.get('.header-session-control').text()).toBe('Sign in')
+  })
+
+  it('shows a global sign-out control for an authenticated session', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.get('.header-session-control').text()).toBe('Sign out')
+    expect(wrapper.get('.header-session-control').attributes('title')).toBe('Signed in as mshappe')
+  })
+
+  it('documents current map interactions', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+
+    expect(wrapper.find('header .interaction-hint').text()).toBe('Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop')
+    expect(wrapper.find('header > .interaction-hint').exists()).toBe(true)
+    expect(wrapper.find('.scene-shell .interaction-hint').exists()).toBe(false)
+  })
+
   it('displays selected-source distances from the active map origin in light-years', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)
@@ -83,10 +169,19 @@ describe('App label curation', () => {
     wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Distance from map origin (ly)')
-    expect(wrapper.text()).not.toContain('Distance from map origin (pc)')
+    expect(wrapper.text()).toContain('Distance from origin')
+    expect(wrapper.text()).not.toContain('Distance from origin (pc)')
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Distance from map origin (ly)', '0.569'],
+      ['Distance from origin', '0.569 ly / 17.964 lMs'],
+      ['System diameter', '1,278.45 ls'],
+    ])
+
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', secondSource)
+    await flushPromises()
+
+    expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
+      ['Distance from origin', '1.138 ly / 35.927 lMs'],
+      ['System diameter', 'Unavailable'],
     ])
   })
 
@@ -108,13 +203,44 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Distance from map origin (ly)', '32.616'],
-      ['Catalog category', 'Solar System reference star'],
+      ['Distance from origin', '32.616 ly / 1,029.271 lMs'],
       ['Confirmed planets', '8'],
       ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
-      ['Known planetary-system diameter (light-seconds)', '30,268.159'],
+      ['System diameter', '30,268.159 ls'],
       ['NASA host identifier(s)', 'Sun (JPL Horizons target 10)'],
     ])
+  })
+
+  it('puts route distance units in values with abbreviated labels', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).exists()).toBe(false)
+
+    const scene = wrapper.findComponent({ name: 'AtlasScene' })
+    scene.vm.$emit('select', firstSource)
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).exists()).toBe(false)
+
+    scene.vm.$emit('select', secondSource)
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).props('fields')).toEqual([
+      ['Stops', '2'],
+      ['Overall distance', expect.stringMatching(/ ly \/ .* lMs$/)],
+    ])
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).props('tooltip'))
+      .toBe('Overall travel distance from the displayed Gaia coordinates.')
   })
 
   it('retains the active catalog selection when a replacement catalog cannot load', async () => {
@@ -206,6 +332,7 @@ describe('App label curation', () => {
           labels: labelCreated ? [{
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           }] : [],
         }))
       }
@@ -252,6 +379,7 @@ describe('App label curation', () => {
       label: {
         gaiaSourceId: firstSource.sourceId,
         displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+        revision: 1,
       },
     }, { status: 201 }))
     await flushPromises()
@@ -352,6 +480,7 @@ describe('App label curation', () => {
           label: {
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           },
         }, { status: 201 }))
       }
@@ -403,6 +532,7 @@ describe('App label curation', () => {
           label: {
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           },
         }, { status: 201 }))
       }
@@ -413,6 +543,7 @@ describe('App label curation', () => {
           labels: [{
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           }],
         }))
       }
@@ -485,8 +616,85 @@ describe('App label curation', () => {
       label: {
         gaiaSourceId: firstSource.sourceId,
         displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+        revision: 1,
       },
     }, { status: 201 }))
     await flushPromises()
+  })
+
+  it('removes a permanent label only after confirmation and restores the add action', async () => {
+    let labelRemoved = false
+    const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url === `/api/labels/${firstSource.sourceId}` && init?.method === 'DELETE') {
+        labelRemoved = true
+        return Promise.resolve(Response.json({
+          label: {
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: 'Verified Host',
+            revision: 1,
+          },
+        }))
+      }
+      if (url === '/api/labels') {
+        return Promise.resolve(Response.json({
+          labels: labelRemoved ? [] : [{
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: 'Verified Host',
+            revision: 1,
+          }],
+        }))
+      }
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) return Promise.resolve(Response.json({
+        sourceId: firstSource.sourceId,
+        candidates: [{
+          displayLabel: 'Verified Host',
+          authority: 'NASA Exoplanet Archive hostname',
+        }],
+      }))
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+
+    const selection = wrapper.findComponent(SelectionPanel)
+    expect(selection.props('labelAction')).toBe('remove')
+    const search = wrapper.findComponent({ name: 'CatalogSearch' })
+    search.vm.$emit('search', 'Verified Host')
+    await flushPromises()
+    expect(search.props('results')).toHaveLength(1)
+
+    selection.vm.$emit('requestLabelRemoval')
+    await flushPromises()
+
+    const curation = wrapper.findComponent({ name: 'LabelCurationPanel' })
+    expect(curation.props('removalOpen')).toBe(true)
+    expect(fetchMock.mock.calls.some(([input, init]) => (
+      String(input) === `/api/labels/${firstSource.sourceId}` && init?.method === 'DELETE'
+    ))).toBe(false)
+
+    curation.vm.$emit('retire')
+    await flushPromises()
+
+    expect(selection.props('labelAction')).toBe('add')
+    expect(curation.props('removalOpen')).toBe(false)
+    expect(wrapper.findComponent({ name: 'AtlasScene' }).props('permanentLabels')).toEqual({})
+    const refreshedSearch = wrapper.findComponent({ name: 'CatalogSearch' })
+    expect(refreshedSearch.props('results')).toEqual([])
+    expect(refreshedSearch.props('status')).toBe('Searches Gaia DR3 IDs, NASA host and planet identifiers, and configured labels.')
+    expect(curation.props('candidates')).toMatchObject({
+      sourceId: firstSource.sourceId,
+      candidates: [{ displayLabel: 'Verified Host' }],
+    })
   })
 })

@@ -16,10 +16,12 @@ import {
   loadAtlasSession,
   loadLabelCandidates,
   loadPersistentLabelCatalog,
+  logoutAtlasSession,
+  retirePersistentLabel,
   type AtlasSession,
   type LabelCandidates,
 } from './label-api'
-import { addPersistentLabel } from './label-catalog'
+import { addPersistentLabel, removePersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
 import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, projectedPositionUncertaintyParsecs, propagateGaiaPosition } from './space-motion'
 
@@ -34,8 +36,14 @@ const sessionStatus = ref('')
 const labelCandidates = ref<LabelCandidates>()
 const candidateError = ref('')
 const creationError = ref('')
+const retirementError = ref('')
+const logoutError = ref('')
 const isLoadingCandidates = ref(false)
 const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
+const retiringLabelSourceIds = ref<ReadonlySet<string>>(new Set())
+const signingOut = ref(false)
+const labelMenuOpen = ref(false)
+const labelRemovalOpen = ref(false)
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
@@ -43,11 +51,10 @@ const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
 const SELECTED_SOURCE_SUMMARY_TERMS = [
-  'Distance from map origin (ly)',
-  'Catalog category',
+  'Distance from origin',
   'Confirmed planets',
   'Planet name(s)',
-  'Known planetary-system diameter (light-seconds)',
+  'System diameter',
   'NASA host identifier(s)',
 ] as const
 let projectionProgressStartedAt = 0
@@ -79,8 +86,13 @@ const selectedGaiaSourceId = computed(() => {
 const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   ? atlas.state.permanentLabels.labelsBySourceId[selectedGaiaSourceId.value]
   : undefined)
+const selectedPermanentLabelRevision = computed(() => selectedGaiaSourceId.value
+  ? atlas.state.permanentLabels.revisionsBySourceId[selectedGaiaSourceId.value]
+  : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
+const isRetiringLabel = computed(() => selectedGaiaSourceId.value !== undefined
+  && retiringLabelSourceIds.value.has(selectedGaiaSourceId.value))
 const projectedSourceCount = computed(() => projectionEpoch.value === undefined
   ? undefined
   : (atlas.state.activeCatalog?.rows.filter(hasMeasuredSixDimensionalState).length ?? 0))
@@ -127,6 +139,9 @@ onBeforeUnmount(() => {
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
   curationRequestId += 1
   creationError.value = ''
+  retirementError.value = ''
+  labelMenuOpen.value = false
+  labelRemovalOpen.value = false
   void refreshLabelCandidates()
 })
 
@@ -190,6 +205,23 @@ async function refreshSession() {
   }
 }
 
+async function signOutFromCuration() {
+  if (signingOut.value) return
+  logoutError.value = ''
+  signingOut.value = true
+  try {
+    await logoutAtlasSession()
+    session.value = { authenticated: false, maintainer: false }
+    labelCandidates.value = undefined
+    labelMenuOpen.value = false
+    labelRemovalOpen.value = false
+  } catch (error) {
+    logoutError.value = `Could not sign out: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    signingOut.value = false
+  }
+}
+
 async function refreshLabelCandidates() {
   const sourceId = selectedGaiaSourceId.value
   const loadId = ++candidateLoadId
@@ -225,8 +257,10 @@ async function createLabel(sourceId: string, displayLabel: string) {
     const createdLabel = await createPersistentLabel(sourceId, displayLabel)
     labelCatalogLoadId += 1
     atlas.setLabelCatalog(addPersistentLabel(atlas.state.permanentLabels, createdLabel))
+    resetSearch()
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
+    labelMenuOpen.value = false
     await refreshLabelCandidates()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
   } catch (error) {
@@ -235,6 +269,32 @@ async function createLabel(sourceId: string, displayLabel: string) {
   } finally {
     creatingLabelSourceIds.value = new Set(
       [...creatingLabelSourceIds.value].filter((creatingSourceId) => creatingSourceId !== sourceId),
+    )
+  }
+}
+
+async function retireLabel() {
+  const sourceId = selectedGaiaSourceId.value
+  const revision = selectedPermanentLabelRevision.value
+  if (!sourceId || !selectedPermanentLabel.value || revision === undefined || retiringLabelSourceIds.value.has(sourceId)) return
+  const requestId = ++curationRequestId
+  retirementError.value = ''
+  retiringLabelSourceIds.value = new Set([...retiringLabelSourceIds.value, sourceId])
+  try {
+    await retirePersistentLabel(sourceId, revision)
+    labelCatalogLoadId += 1
+    atlas.setLabelCatalog(removePersistentLabel(atlas.state.permanentLabels, sourceId))
+    resetSearch()
+    await refreshLabelCatalog()
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
+    labelRemovalOpen.value = false
+    await refreshLabelCandidates()
+  } catch (error) {
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
+    retirementError.value = `Permanent label could not be removed: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    retiringLabelSourceIds.value = new Set(
+      [...retiringLabelSourceIds.value].filter((retiringSourceId) => retiringSourceId !== sourceId),
     )
   }
 }
@@ -343,26 +403,28 @@ function searchableIdentifiers(object: AtlasObject) {
 }
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
-  const distanceFromMapOrigin = formatLightYears(cartesianDistance(
+  const distanceFromMapOriginParsecs = cartesianDistance(
     positionForObject(object),
     positionForObject(atlas.state.selectedOrigin),
-  ))
+  )
+  const distanceFromMapOriginLightYears = distanceFromMapOriginParsecs * LIGHT_YEARS_PER_PARSEC
+  const distanceFromMapOrigin = `${formatMeasurement(distanceFromMapOriginLightYears)} ly / ${formatMeasurement(distanceFromMapOriginLightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`
   if (isNonGaiaStar(object)) {
     const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
-      ['Distance from map origin (ly)', distanceFromMapOrigin],
-      ['Catalog category', object.sourceCategory],
+      ['Distance from origin', distanceFromMapOrigin],
+      ['Category', object.sourceCategory],
       ['Confirmed planets', String(object.planetCount)],
       ['Planet name(s)', object.planetNames],
-      ['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)],
-      ['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)],
+      ['Orbital diameter', `${formatMeasurement(object.knownSystemDiameterAu)} AU`],
+      ['System diameter', `${formatMeasurement(object.knownSystemDiameterLightSeconds)} ls`],
       ['NASA host identifier(s)', object.hostIdentifier],
       ['Object category', 'Star'],
       ['Position source', object.coordinateBasis],
-      ['Barycentric ICRF X (ly)', formatLightYears(x)],
-      ['Barycentric ICRF Y (ly)', formatLightYears(y)],
-      ['Barycentric ICRF Z (ly)', formatLightYears(z)],
+      ['Barycentric ICRF X', `${formatLightYears(x)} ly`],
+      ['Barycentric ICRF Y', `${formatLightYears(y)} ly`],
+      ['Barycentric ICRF Z', `${formatLightYears(z)} ly`],
       ['Evidence', object.evidence],
     ]
     if (projectionEpoch.value !== undefined) {
@@ -374,25 +436,30 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
   const preferredName = atlas.state.permanentLabels.labelsBySourceId[object.sourceId]
   const fields: Array<[string, string]> = [
     ['Gaia source ID', object.sourceId],
-    ['RA (deg)', formatMeasurement(object.ra)],
-    ['Dec (deg)', formatMeasurement(object.dec)],
-    ['Parallax (mas)', formatMeasurement(object.parallax)],
-    ['Distance from map origin (ly)', distanceFromMapOrigin],
+    ['RA', `${formatMeasurement(object.ra)} deg`],
+    ['Dec', `${formatMeasurement(object.dec)} deg`],
+    ['Parallax', `${formatMeasurement(object.parallax)} mas`],
+    ['Distance from origin', distanceFromMapOrigin],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
-  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty (mas)', formatMeasurement(object.parallaxError)])
+  if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty', `${formatMeasurement(object.parallaxError)} mas`])
   if (object.magnitude !== undefined && Number.isFinite(object.magnitude)) {
-    fields.push(['Mean G magnitude', formatMeasurement(object.magnitude)])
-    fields.push(['Display absolute G magnitude', formatMeasurement(object.magnitude - 5 * (Math.log10(distanceParsecs) - 1))])
+    fields.push(['Mean G magnitude', `${formatMeasurement(object.magnitude)} mag`])
+    fields.push(['Display absolute G magnitude', `${formatMeasurement(object.magnitude - 5 * (Math.log10(distanceParsecs) - 1))} mag`])
   }
-  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index (mag)', formatMeasurement(object.bpRp)])
+  if (object.bpRp !== undefined && Number.isFinite(object.bpRp)) fields.push(['BP−RP color index', `${formatMeasurement(object.bpRp)} mag`])
   if (!preferredName && object.hostNames) fields.push(['NASA host identifier(s)', object.hostNames])
-  if (object.sourceCategory) fields.push(['Catalog category', object.sourceCategory])
+  if (object.sourceCategory) fields.push(['Category', object.sourceCategory])
   if (object.planetCount !== undefined && Number.isFinite(object.planetCount)) fields.push(['Confirmed planets', String(object.planetCount)])
   if (object.planetNames) fields.push(['Planet name(s)', object.planetNames])
   if (object.discoveryMethods) fields.push(['Discovery method(s)', object.discoveryMethods])
-  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Known planetary-system diameter (AU)', formatMeasurement(object.knownSystemDiameterAu)])
-  if (object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)) fields.push(['Known planetary-system diameter (light-seconds)', formatMeasurement(object.knownSystemDiameterLightSeconds)])
+  if (object.knownSystemDiameterAu !== undefined && Number.isFinite(object.knownSystemDiameterAu)) fields.push(['Orbital diameter', `${formatMeasurement(object.knownSystemDiameterAu)} AU`])
+  fields.push([
+    'System diameter',
+    object.knownSystemDiameterLightSeconds !== undefined && Number.isFinite(object.knownSystemDiameterLightSeconds)
+      ? `${formatMeasurement(object.knownSystemDiameterLightSeconds)} ls`
+      : 'Unavailable',
+  ])
   if (object.evidence) fields.push(['Evidence', object.evidence])
   if (object.nssTables) fields.push(['Gaia DR3 NSS solution table(s)', object.nssTables])
   if (object.duplicatedSource) fields.push(['Gaia quality flag', 'Duplicated source'])
@@ -409,13 +476,13 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     if (projected) {
       const current = cartesianPosition(object)
       const displacementAu = cartesianDistance(current, projected) * 206_264.806_247_096_36
-      fields.push(['Projected barycentric X (ly)', formatLightYears(projected[0])])
-      fields.push(['Projected barycentric Y (ly)', formatLightYears(projected[1])])
-      fields.push(['Projected barycentric Z (ly)', formatLightYears(projected[2])])
-      fields.push(['J2016.0 to projected displacement (AU)', formatMeasurement(displacementAu)])
+      fields.push(['Projected barycentric X', `${formatLightYears(projected[0])} ly`])
+      fields.push(['Projected barycentric Y', `${formatLightYears(projected[1])} ly`])
+      fields.push(['Projected barycentric Z', `${formatLightYears(projected[2])} ly`])
+      fields.push(['J2016.0 to projected displacement', `${formatMeasurement(displacementAu)} AU`])
       const uncertainty = projectedPositionUncertaintyParsecs(object, projectionEpoch.value)
       fields.push(['Astrometric covariance', astrometricCovariance(object) ? 'Published Gaia five-parameter covariance is valid' : 'Unavailable or invalid'])
-      fields.push(['Projected RSS Cartesian uncertainty (ly)', uncertainty === undefined ? 'Unavailable or invalid' : formatLightYears(uncertainty)])
+      fields.push(['Projected RSS Cartesian uncertainty', uncertainty === undefined ? 'Unavailable' : `${formatLightYears(uncertainty)} ly`])
     }
   }
   return fields
@@ -434,11 +501,11 @@ function routeDisplay(endpoints: AtlasObject[]) {
   const parsecs = routeDistanceFromPositions(positions)
   const lightYears = parsecs * LIGHT_YEARS_PER_PARSEC
   return {
-    status: 'Overall travel distance from the displayed Gaia coordinates.',
+    status: '',
+    tooltip: 'Overall travel distance from the displayed Gaia coordinates.',
     fields: [
       ['Stops', String(endpoints.length)],
-      ['Overall distance (ly)', formatMeasurement(lightYears)],
-      ['Overall distance (light-megaseconds)', formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)],
+      ['Overall distance', `${formatMeasurement(lightYears)} ly / ${formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`],
     ] as Array<[string, string]>,
     hops: endpoints.slice(1).map((endpoint, index) => {
       const hopParsecs = cartesianDistance(positions[index], positions[index + 1])
@@ -485,60 +552,60 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
 <template>
   <main class="atlas">
     <header>
-      <div>
+      <div class="header-brand">
         <p class="eyebrow">
           Gaia DR3 spatial viewer
         </p>
         <h1>Stellar Atlas</h1>
       </div>
-      <p class="catalog-state">
-        {{ catalogState }}
+      <p class="interaction-hint">
+        Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
       </p>
+      <div class="header-meta">
+        <div class="header-actions">
+          <ReferenceFramePanel />
+          <CatalogControls
+            :selected-catalog-key="selectedBundledCatalogKey"
+            :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
+            :import-status="importStatus"
+            :label-catalog-status="labelCatalogStatus"
+            :projection-epoch="projectionEpoch"
+            :projection-available="atlas.state.activeFocusedCatalog"
+            :projected-source-count="projectedSourceCount"
+            :projection-rendering="projectionRendering"
+            @change-catalog="loadBundledCatalog"
+            @toggle-labels="toggleLabels"
+            @import-file="importCatalog"
+            @retry-labels="refreshLabelCatalog"
+            @change-projection-epoch="setProjectionEpoch"
+          />
+          <button
+            class="header-session-control"
+            type="button"
+            :disabled="session?.authenticated && signingOut"
+            :title="session?.authenticated ? `Signed in as ${session.login}` : 'Sign in with GitHub'"
+            @click="session?.authenticated ? signOutFromCuration() : signInForCuration()"
+          >
+            {{ session?.authenticated ? signingOut ? 'Signing out…' : 'Sign out' : 'Sign in' }}
+          </button>
+        </div>
+        <p class="catalog-state">
+          {{ catalogState }}
+        </p>
+        <p
+          v-if="logoutError"
+          class="logout-status"
+          role="status"
+        >
+          {{ logoutError }}
+        </p>
+      </div>
     </header>
     <section
       class="workspace"
       aria-label="3D stellar visualization"
     >
       <aside class="sidebar">
-        <SelectionPanel
-          :name="selectedName"
-          :summary-fields="selectedFieldGroups.summaryFields"
-          :detail-fields="selectedFieldGroups.detailFields"
-        />
-        <LabelCurationPanel
-          :session="session"
-          :source-id="selectedGaiaSourceId"
-          :existing-label="selectedPermanentLabel"
-          :candidates="labelCandidates"
-          :session-status="sessionStatus"
-          :candidate-error="candidateError"
-          :creation-error="creationError"
-          :loading-candidates="isLoadingCandidates"
-          :creating-label="isCreatingLabel"
-          @sign-in="signInForCuration"
-          @create="createLabel"
-          @retry-candidates="refreshLabelCandidates"
-        />
-        <RoutePanel
-          v-bind="route"
-          :has-endpoints="Boolean(atlas.state.measurementEndpoints.length)"
-          @clear="clearRoute"
-        />
-        <CatalogControls
-          :selected-catalog-key="selectedBundledCatalogKey"
-          :hide-unlabeled-stars="atlas.state.hideUnlabeledStars"
-          :import-status="importStatus"
-          :label-catalog-status="labelCatalogStatus"
-          :projection-epoch="projectionEpoch"
-          :projection-available="atlas.state.activeFocusedCatalog"
-          :projected-source-count="projectedSourceCount"
-          :projection-rendering="projectionRendering"
-          @change-catalog="loadBundledCatalog"
-          @toggle-labels="toggleLabels"
-          @import-file="importCatalog"
-          @retry-labels="refreshLabelCatalog"
-          @change-projection-epoch="setProjectionEpoch"
-        />
         <CatalogSearch
           :key="searchResetId"
           :results="searchResults"
@@ -547,7 +614,46 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @locate="locateSearchResult"
           @clear="clearSearchDisplay"
         />
-        <ReferenceFramePanel />
+        <SelectionPanel
+          :name="selectedName"
+          :origin-name="sourceDisplayName(atlas.state.selectedOrigin)"
+          :summary-fields="selectedFieldGroups.summaryFields"
+          :detail-fields="selectedFieldGroups.detailFields"
+          :label-action="selectedGaiaSourceId ? selectedPermanentLabel ? 'remove' : 'add' : undefined"
+          @open-label-menu="labelMenuOpen = true"
+          @request-label-removal="labelRemovalOpen = true"
+        />
+        <LabelCurationPanel
+          :open="labelMenuOpen"
+          :removal-open="labelRemovalOpen"
+          :session="session"
+          :source-id="selectedGaiaSourceId"
+          :source-name="selectedName"
+          :existing-label="selectedPermanentLabel"
+          :candidates="labelCandidates"
+          :session-status="sessionStatus"
+          :candidate-error="candidateError"
+          :creation-error="creationError"
+          :retirement-error="retirementError"
+          :logout-error="logoutError"
+          :loading-candidates="isLoadingCandidates"
+          :creating-label="isCreatingLabel"
+          :retiring-label="isRetiringLabel"
+          :signing-out="signingOut"
+          @sign-in="signInForCuration"
+          @sign-out="signOutFromCuration"
+          @create="createLabel"
+          @retry-candidates="refreshLabelCandidates"
+          @retire="retireLabel"
+          @close-menu="labelMenuOpen = false"
+          @close-removal="labelRemovalOpen = false"
+        />
+        <RoutePanel
+          v-if="atlas.state.measurementEndpoints.length >= 2"
+          v-bind="route"
+          :has-endpoints="Boolean(atlas.state.measurementEndpoints.length)"
+          @clear="clearRoute"
+        />
       </aside>
       <div class="scene-shell">
         <AtlasScene
@@ -566,9 +672,6 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @pop-route="popRoute"
           @projection-rendered="finishProjectionRender"
         />
-        <p class="scene-hint">
-          Drag to orbit · scroll to zoom · double-click a point for its Gaia values
-        </p>
       </div>
     </section>
     <footer>

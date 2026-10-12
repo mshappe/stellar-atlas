@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApiServer, type ApiConfig } from '../server/api'
 import { createSignedSession } from '../server/auth'
-import { LabelAlreadyExistsError } from '../server/label-store'
+import { LabelAlreadyExistsError, LabelNotFoundError, LabelRevisionConflictError } from '../server/label-store'
 
 const origin = 'http://127.0.0.1'
 const sourceId = '1234567890123456789'
@@ -23,6 +23,7 @@ afterEach(async () => {
 
 function startApiServer(overrides: Partial<ApiConfig> = {}) {
   const created: unknown[] = []
+  const retired: unknown[] = []
   const server = createApiServer({
     publicOrigin: origin,
     sessionSigningSecret: 'test-session-secret',
@@ -35,7 +36,19 @@ function startApiServer(overrides: Partial<ApiConfig> = {}) {
       listEvents: () => [],
       createMaintainerLabel: (label) => {
         created.push(label)
-        return { ...label, origin: 'maintainer' as const, createdAt: '2026-10-08T00:00:00.000Z' }
+        return { ...label, revision: 1, origin: 'maintainer' as const, createdAt: '2026-10-08T00:00:00.000Z' }
+      },
+      retireLabel: (requestedSourceId, revision, actorLogin) => {
+        retired.push({ sourceId: requestedSourceId, revision, actorLogin })
+        return {
+          gaiaSourceId: requestedSourceId,
+          displayLabel: 'Verified Host',
+          revision,
+          evidence: { gaia_dr3_source_id: requestedSourceId, nasa_hostname: 'Verified Host' },
+          origin: 'maintainer' as const,
+          createdAt: '2026-10-08T00:00:00.000Z',
+          createdBy: actorLogin,
+        }
       },
       schemaVersion: () => 1,
       close: () => {},
@@ -56,7 +69,7 @@ function startApiServer(overrides: Partial<ApiConfig> = {}) {
     ...overrides,
   })
   servers.push(server)
-  return { server, created }
+  return { server, created, retired }
 }
 
 async function listen(server: Server) {
@@ -80,6 +93,28 @@ function postLabel(baseUrl: string, options: { body?: string, cookie?: string, o
       'Content-Type': 'application/json',
     },
     body: options.body ?? labelRequest(),
+  })
+}
+
+function deleteLabel(baseUrl: string, requestedSourceId = sourceId, options: { cookie?: string, origin?: string, revision?: number } = {}) {
+  return fetch(`${baseUrl}/api/labels/${requestedSourceId}`, {
+    method: 'DELETE',
+    headers: {
+      ...(options.cookie ? { Cookie: options.cookie } : {}),
+      ...(options.origin ? { Origin: options.origin } : {}),
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ revision: options.revision ?? 1 }),
+  })
+}
+
+function postLogout(baseUrl: string, options: { cookie?: string, origin?: string } = {}) {
+  return fetch(`${baseUrl}/api/auth/logout`, {
+    method: 'POST',
+    headers: {
+      ...(options.cookie ? { Cookie: options.cookie } : {}),
+      ...(options.origin ? { Origin: options.origin } : {}),
+    },
   })
 }
 
@@ -115,6 +150,21 @@ describe('API', () => {
     expect((await postLabel(baseUrl, { cookie: sessionCookie, origin: 'https://attacker.example' })).status).toBe(403)
   })
 
+  it('clears the signed session cookie through a same-origin logout request', async () => {
+    const { server } = startApiServer()
+    const baseUrl = await listen(server)
+
+    expect((await postLogout(baseUrl, { cookie: sessionCookie })).status).toBe(403)
+
+    const response = await postLogout(baseUrl, { cookie: sessionCookie, origin })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ authenticated: false, maintainer: false })
+    expect(response.headers.getSetCookie()).toEqual(expect.arrayContaining([
+      expect.stringContaining('stellar_atlas_session=; Max-Age=0'),
+    ]))
+  })
+
   it('returns verified label candidates only to maintainers', async () => {
     const { server } = startApiServer()
     const baseUrl = await listen(server)
@@ -145,6 +195,9 @@ describe('API', () => {
         createMaintainerLabel: () => {
           throw new LabelAlreadyExistsError(sourceId)
         },
+        retireLabel: () => {
+          throw new LabelNotFoundError(sourceId)
+        },
         schemaVersion: () => 1,
         close: () => {},
       },
@@ -169,7 +222,7 @@ describe('API', () => {
 
     expect(response.status).toBe(201)
     await expect(response.json()).resolves.toMatchObject({
-      label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', createdBy: 'mshappe' },
+      label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', revision: 1, createdBy: 'mshappe' },
     })
     expect(created).toEqual([{
       gaiaSourceId: sourceId,
@@ -177,6 +230,92 @@ describe('API', () => {
       evidence: { gaia_dr3_source_id: sourceId, nasa_hostname: 'Verified Host' },
       createdBy: 'mshappe',
     }])
+  })
+
+  it('requires same-origin maintainer authentication before retiring labels', async () => {
+    const { server, retired } = startApiServer()
+    const baseUrl = await listen(server)
+    const nonMaintainer = createSignedSession('not-a-maintainer', 'test-session-secret')
+
+    expect((await deleteLabel(baseUrl, sourceId, { origin })).status).toBe(403)
+    expect((await deleteLabel(baseUrl, sourceId, {
+      cookie: `stellar_atlas_session=${nonMaintainer}`,
+      origin,
+    })).status).toBe(403)
+    expect((await deleteLabel(baseUrl, sourceId, { cookie: sessionCookie })).status).toBe(403)
+    expect((await deleteLabel(baseUrl, 'not-a-source-id', {
+      cookie: sessionCookie,
+      origin,
+    })).status).toBe(400)
+    expect(retired).toEqual([])
+  })
+
+  it('retires a permanent label for a same-origin maintainer', async () => {
+    const { server, retired } = startApiServer()
+    const baseUrl = await listen(server)
+
+    const response = await deleteLabel(baseUrl, sourceId, { cookie: sessionCookie, origin })
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', createdBy: 'mshappe' },
+    })
+    expect(retired).toEqual([{ sourceId, revision: 1, actorLogin: 'mshappe' }])
+  })
+
+  it('reports a missing permanent label during retirement', async () => {
+    const { server } = startApiServer({
+      labelStore: {
+        listLabels: () => [],
+        listEvents: () => [],
+        createMaintainerLabel: () => {
+          throw new LabelAlreadyExistsError(sourceId)
+        },
+        retireLabel: () => {
+          throw new LabelNotFoundError(sourceId)
+        },
+        schemaVersion: () => 2,
+        close: () => {},
+      },
+    })
+
+    const baseUrl = await listen(server)
+
+    const response = await deleteLabel(baseUrl, sourceId, { cookie: sessionCookie, origin })
+
+    expect(response.status).toBe(404)
+    await expect(response.json()).resolves.toEqual({
+      error: `Gaia DR3 source ID ${sourceId} does not have a permanent label.`,
+    })
+  })
+
+  it('rejects retirement when the confirmed label revision is stale', async () => {
+    const { server } = startApiServer({
+      labelStore: {
+        listLabels: () => [],
+        listEvents: () => [],
+        createMaintainerLabel: () => {
+          throw new LabelAlreadyExistsError(sourceId)
+        },
+        retireLabel: () => {
+          throw new LabelRevisionConflictError(sourceId)
+        },
+        schemaVersion: () => 2,
+        close: () => {},
+      },
+    })
+    const baseUrl = await listen(server)
+
+    const response = await deleteLabel(baseUrl, sourceId, {
+      cookie: sessionCookie,
+      origin,
+      revision: 99,
+    })
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: `Gaia DR3 source ID ${sourceId} has changed since confirmation. Refresh and try again.`,
+    })
   })
 
   it('returns client errors for malformed and oversized JSON', async () => {
@@ -193,6 +332,9 @@ describe('API', () => {
         listLabels: () => [],
         listEvents: () => [],
         createMaintainerLabel: () => {
+          throw new Error('private SQLite path /srv/atlas/labels.sqlite')
+        },
+        retireLabel: () => {
           throw new Error('private SQLite path /srv/atlas/labels.sqlite')
         },
         schemaVersion: () => 1,

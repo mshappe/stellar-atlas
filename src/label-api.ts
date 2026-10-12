@@ -26,6 +26,10 @@ export async function loadAtlasSession(): Promise<AtlasSession> {
   return value
 }
 
+export async function logoutAtlasSession(): Promise<void> {
+  await requestJson('/api/auth/logout', { method: 'POST' })
+}
+
 export async function loadLabelCandidates(sourceId: string): Promise<LabelCandidates> {
   const value = await requestJson(`/api/labels/candidates?${new URLSearchParams({ sourceId })}`)
   if (!isLabelCandidates(value)) throw new Error('The label candidate API response is invalid.')
@@ -40,6 +44,18 @@ export async function createPersistentLabel(sourceId: string, displayLabel: stri
   })
   if (!isRecord(value) || !isPersistentLabelDefinition(value.label)) {
     throw new Error('The label creation API response is invalid.')
+  }
+  return value.label
+}
+
+export async function retirePersistentLabel(sourceId: string, revision: number): Promise<PersistentLabel> {
+  const value = await requestJson(`/api/labels/${encodeURIComponent(sourceId)}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ revision }),
+  })
+  if (!isRecord(value) || !isPersistentLabelDefinition(value.label)) {
+    throw new Error('The label retirement API response is invalid.')
   }
   return value.label
 }
@@ -77,6 +93,9 @@ function isPersistentLabelDefinition(value: unknown): value is PersistentLabel {
   return isRecord(value)
     && typeof value.gaiaSourceId === 'string'
     && typeof value.displayLabel === 'string'
+    && typeof value.revision === 'number'
+    && Number.isSafeInteger(value.revision)
+    && value.revision > 0
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -19,14 +19,20 @@ describe('parseLabelCatalog', () => {
   })
 
   it('extracts persistent labels from the API response', () => {
-    expect(parsePersistentLabelCatalog({
+    const catalog = parsePersistentLabelCatalog({
       labels: [{
-        gaiaSourceId: '2635476908753563008',
+        gaiaSourceId: ' 2635476908753563008 ',
         displayLabel: 'TRAPPIST-1',
+        revision: 1,
         origin: 'seed',
       }],
-    }).labelsBySourceId).toEqual({
+    })
+
+    expect(catalog.labelsBySourceId).toEqual({
       '2635476908753563008': 'TRAPPIST-1',
+    })
+    expect(catalog.revisionsBySourceId).toEqual({
+      '2635476908753563008': 1,
     })
   })
 
@@ -41,6 +47,7 @@ describe('parseLabelCatalog', () => {
     expect(addPersistentLabel(catalog, {
       gaiaSourceId: '1234567890123456789',
       displayLabel: 'Verified Host',
+      revision: 2,
     }).labelsBySourceId).toEqual({
       '2635476908753563008': 'TRAPPIST-1',
       '1234567890123456789': 'Verified Host',

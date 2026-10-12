@@ -15,5 +15,54 @@ services:
       - atlas-labels:/app/runtime
     restart: unless-stopped
 
+  test:
+    build:
+      context: .
+      target: build
+    profiles:
+      - test
+    command: npm test
+
+  api:
+    build:
+      context: .
+      target: development
+    profiles:
+      - dev
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      PUBLIC_ORIGIN: http://localhost:${DEV_HOST_PORT:-5173}
+      LABEL_DATABASE_PATH: /app/runtime/labels.sqlite
+      SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
+    command: node --watch --import tsx server/main.ts
+    volumes:
+      - ./server:/app/server
+      - ./src:/app/src
+      - dev-node-modules:/app/node_modules
+      - atlas-labels:/app/runtime
+
+  vite:
+    build:
+      context: .
+      target: development
+    profiles:
+      - dev
+    environment:
+      API_PROXY_TARGET: http://api:3000
+    depends_on:
+      - api
+    command: npm exec vite -- --host 0.0.0.0
+    ports:
+      - "${DEV_HOST_PORT:-5173}:5173"
+    volumes:
+      - ./index.html:/app/index.html
+      - ./public:/app/public
+      - ./src:/app/src
+      - ./vite.config.ts:/app/vite.config.ts
+      - dev-node-modules:/app/node_modules
+
 volumes:
   atlas-labels:
+  dev-node-modules:

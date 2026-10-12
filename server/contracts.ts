@@ -7,6 +7,7 @@ export type LabelSeed = {
 }
 
 export type PersistentLabel = LabelSeed & {
+  revision: number
   origin: LabelOrigin
   createdAt: string
   createdBy: string | undefined
@@ -19,7 +20,7 @@ export type MaintainerLabel = LabelSeed & {
 export type LabelEvent = {
   id: number
   gaiaSourceId: string
-  eventType: 'seeded' | 'created'
+  eventType: 'seeded' | 'created' | 'removed'
   actorLogin: string | undefined
   occurredAt: string
   payload: Record<string, unknown>

@@ -1,13 +1,22 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import TooltipLabel from './TooltipLabel.vue'
 
-defineProps<{
+const props = defineProps<{
   name?: string
+  originName?: string
   summaryFields: Array<[string, string]>
   detailFields: Array<[string, string]>
+  labelAction?: 'add' | 'remove'
+}>()
+
+const emit = defineEmits<{
+  openLabelMenu: []
+  requestLabelRemoval: []
 }>()
 
 const detailsDialog = ref<HTMLDialogElement>()
+const systemDiameterTooltip = 'Twice the largest known planetary apoastron: 2 × max[a × (1 + e)]. Excludes stellar companions, debris disks, unreported planets, and planets without both orbital measurements.'
 
 function openDetails() {
   detailsDialog.value?.showModal()
@@ -16,22 +25,55 @@ function openDetails() {
 function closeDetails() {
   detailsDialog.value?.close()
 }
+
+function handleLabelAction() {
+  if (props.labelAction === 'add') emit('openLabelMenu')
+  if (props.labelAction === 'remove') emit('requestLabelRemoval')
+}
 </script>
 
 <template>
-  <section v-if="name">
+  <section
+    v-if="name"
+    class="selected-source-panel"
+  >
     <p class="selection-heading">
       Selected source
     </p>
-    <h2 class="source-name">
-      {{ name }}
-    </h2>
+    <div class="source-title-row">
+      <h2 class="source-name">
+        {{ name }}
+      </h2>
+      <button
+        v-if="labelAction"
+        class="label-action"
+        type="button"
+        :aria-label="labelAction === 'add' ? `Add a permanent label for ${name}` : `Remove the permanent label for ${name}`"
+        @click="handleLabelAction"
+      >
+        {{ labelAction === 'add' ? '+' : '-' }}
+      </button>
+    </div>
     <dl>
       <div
         v-for="[term, detail] in summaryFields"
         :key="term"
       >
-        <dt>{{ term }}</dt>
+        <dt>
+          <TooltipLabel
+            v-if="term === 'System diameter'"
+            class="system-diameter-label"
+            :label="term"
+            :tooltip="systemDiameterTooltip"
+          />
+          <TooltipLabel
+            v-else-if="term === 'Distance from origin' && originName"
+            class="origin-distance-label"
+            :label="term"
+            :tooltip="`Map origin: ${originName}`"
+          />
+          <span v-else>{{ term }}</span>
+        </dt>
         <dd>{{ detail }}</dd>
       </div>
     </dl>
@@ -64,7 +106,15 @@ function closeDetails() {
           v-for="[term, detail] in detailFields"
           :key="term"
         >
-          <dt>{{ term }}</dt>
+          <dt>
+            <TooltipLabel
+              v-if="term === 'System diameter'"
+              class="system-diameter-label"
+              :label="term"
+              :tooltip="systemDiameterTooltip"
+            />
+            <span v-else>{{ term }}</span>
+          </dt>
           <dd>{{ detail }}</dd>
         </div>
       </dl>
