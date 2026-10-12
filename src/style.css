@@ -40,14 +40,6 @@ header {
   letter-spacing: .12em;
   text-transform: uppercase;
 }
-.header-topline {
-  display: flex;
-  align-items: center;
-  gap: .75rem;
-}
-.header-topline .eyebrow { margin: 0; }
-.header-topline .header-actions { margin-left: auto; }
-
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1; }
 h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
@@ -58,6 +50,11 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   justify-content: end;
   gap: .75rem;
   min-width: 0;
+}
+.header-meta {
+  display: grid;
+  justify-items: end;
+  gap: .25rem;
 }
 .interaction-hint {
   margin: 0;
@@ -570,8 +567,8 @@ a { color: #9ec3ff; }
     align-items: start;
     gap: .4rem;
   }
-  .catalog-state { justify-self: start; text-align: left; }
-  .header-actions { justify-content: start; }
+  .catalog-state { justify-self: end; text-align: right; }
+  .header-actions { justify-content: end; }
   .interaction-hint { text-align: left; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
