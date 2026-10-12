@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env.example
+.git
+.github
+node_modules
+dist
+coverage
+scripts/__pycache__
+data/label-source-index.sqlite
+data/labels.sqlite

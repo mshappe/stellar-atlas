@@ -1,0 +1,19 @@
+services:
+  atlas:
+    build:
+      context: .
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      PUBLIC_ORIGIN: ${DOCKER_PUBLIC_ORIGIN:-http://localhost:3000}
+      LABEL_DATABASE_PATH: /app/runtime/labels.sqlite
+      SOURCE_INDEX_PATH: /app/data/label-source-index.sqlite
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      - atlas-labels:/app/runtime
+    restart: unless-stopped
+
+volumes:
+  atlas-labels:
