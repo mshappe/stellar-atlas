@@ -74,6 +74,14 @@ export function addPersistentLabel(catalog: LabelCatalog, label: PersistentLabel
   ])
 }
 
+export function removePersistentLabel(catalog: LabelCatalog, sourceId: string): LabelCatalog {
+  return catalogFromDefinitions(
+    Object.entries(catalog.labelsBySourceId)
+      .filter(([gaiaSourceId]) => gaiaSourceId !== sourceId)
+      .map(([gaia_dr3_source_id, display_label]) => ({ gaia_dr3_source_id, display_label })),
+  )
+}
+
 function isLabelDefinition(value: unknown): value is LabelDefinition {
   return isRecord(value)
     && typeof value.gaia_dr3_source_id === 'string'

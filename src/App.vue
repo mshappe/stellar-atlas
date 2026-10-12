@@ -16,10 +16,11 @@ import {
   loadAtlasSession,
   loadLabelCandidates,
   loadPersistentLabelCatalog,
+  retirePersistentLabel,
   type AtlasSession,
   type LabelCandidates,
 } from './label-api'
-import { addPersistentLabel } from './label-catalog'
+import { addPersistentLabel, removePersistentLabel } from './label-catalog'
 import { parseGaiaCsv } from './gaia-csv'
 import { astrometricCovariance, GAIA_REFERENCE_EPOCH, hasMeasuredSixDimensionalState, projectedPositionUncertaintyParsecs, propagateGaiaPosition } from './space-motion'
 
@@ -34,8 +35,12 @@ const sessionStatus = ref('')
 const labelCandidates = ref<LabelCandidates>()
 const candidateError = ref('')
 const creationError = ref('')
+const retirementError = ref('')
 const isLoadingCandidates = ref(false)
 const creatingLabelSourceIds = ref<ReadonlySet<string>>(new Set())
+const retiringLabelSourceIds = ref<ReadonlySet<string>>(new Set())
+const labelMenuOpen = ref(false)
+const labelRemovalOpen = ref(false)
 const searchResults = ref<Array<{ object: AtlasObject, name: string, identifiers: string }>>([])
 const searchResetId = ref(0)
 const selectedBundledCatalogKey = ref<CatalogKey | undefined>()
@@ -81,6 +86,8 @@ const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
+const isRetiringLabel = computed(() => selectedGaiaSourceId.value !== undefined
+  && retiringLabelSourceIds.value.has(selectedGaiaSourceId.value))
 const projectedSourceCount = computed(() => projectionEpoch.value === undefined
   ? undefined
   : (atlas.state.activeCatalog?.rows.filter(hasMeasuredSixDimensionalState).length ?? 0))
@@ -127,6 +134,9 @@ onBeforeUnmount(() => {
 watch([selectedGaiaSourceId, () => session.value?.maintainer], () => {
   curationRequestId += 1
   creationError.value = ''
+  retirementError.value = ''
+  labelMenuOpen.value = false
+  labelRemovalOpen.value = false
   void refreshLabelCandidates()
 })
 
@@ -227,6 +237,7 @@ async function createLabel(sourceId: string, displayLabel: string) {
     atlas.setLabelCatalog(addPersistentLabel(atlas.state.permanentLabels, createdLabel))
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
+    labelMenuOpen.value = false
     await refreshLabelCandidates()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
   } catch (error) {
@@ -235,6 +246,29 @@ async function createLabel(sourceId: string, displayLabel: string) {
   } finally {
     creatingLabelSourceIds.value = new Set(
       [...creatingLabelSourceIds.value].filter((creatingSourceId) => creatingSourceId !== sourceId),
+    )
+  }
+}
+
+async function retireLabel() {
+  const sourceId = selectedGaiaSourceId.value
+  if (!sourceId || !selectedPermanentLabel.value || retiringLabelSourceIds.value.has(sourceId)) return
+  const requestId = ++curationRequestId
+  retirementError.value = ''
+  retiringLabelSourceIds.value = new Set([...retiringLabelSourceIds.value, sourceId])
+  try {
+    await retirePersistentLabel(sourceId)
+    labelCatalogLoadId += 1
+    atlas.setLabelCatalog(removePersistentLabel(atlas.state.permanentLabels, sourceId))
+    await refreshLabelCatalog()
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
+    labelRemovalOpen.value = false
+  } catch (error) {
+    if (!isCurrentCurationRequest(requestId, sourceId)) return
+    retirementError.value = `Permanent label could not be removed: ${error instanceof Error ? error.message : 'unknown error'}.`
+  } finally {
+    retiringLabelSourceIds.value = new Set(
+      [...retiringLabelSourceIds.value].filter((retiringSourceId) => retiringSourceId !== sourceId),
     )
   }
 }
@@ -515,20 +549,31 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           :name="selectedName"
           :summary-fields="selectedFieldGroups.summaryFields"
           :detail-fields="selectedFieldGroups.detailFields"
+          :label-action="selectedGaiaSourceId ? selectedPermanentLabel ? 'remove' : 'add' : undefined"
+          @open-label-menu="labelMenuOpen = true"
+          @request-label-removal="labelRemovalOpen = true"
         />
         <LabelCurationPanel
+          :open="labelMenuOpen"
+          :removal-open="labelRemovalOpen"
           :session="session"
           :source-id="selectedGaiaSourceId"
+          :source-name="selectedName"
           :existing-label="selectedPermanentLabel"
           :candidates="labelCandidates"
           :session-status="sessionStatus"
           :candidate-error="candidateError"
           :creation-error="creationError"
+          :retirement-error="retirementError"
           :loading-candidates="isLoadingCandidates"
           :creating-label="isCreatingLabel"
+          :retiring-label="isRetiringLabel"
           @sign-in="signInForCuration"
           @create="createLabel"
           @retry-candidates="refreshLabelCandidates"
+          @retire="retireLabel"
+          @close-menu="labelMenuOpen = false"
+          @close-removal="labelRemovalOpen = false"
         />
         <RoutePanel
           v-bind="route"

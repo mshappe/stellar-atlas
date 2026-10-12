@@ -3,7 +3,7 @@ import { createReadStream, promises as filesystem } from 'node:fs'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { URL } from 'node:url'
 import { createCallbackState, createSignedSession, readSignedSession, verifyCallbackState } from './auth'
-import { LabelAlreadyExistsError, type LabelStore } from './label-store'
+import { LabelAlreadyExistsError, LabelNotFoundError, type LabelStore } from './label-store'
 import type { SourceIndex } from './contracts'
 
 const SESSION_COOKIE = 'stellar_atlas_session'
@@ -90,6 +90,19 @@ export function createApiServer(config: ApiConfig) {
           })
         } catch (error) {
           if (error instanceof LabelAlreadyExistsError) return sendJson(response, 409, { error: error.message })
+          throw error
+        }
+      }
+      if (request.method === 'DELETE' && url.pathname.startsWith('/api/labels/')) {
+        if (!isSameOrigin(request, config.publicOrigin)) return sendJson(response, 403, { error: 'Cross-origin label removal is not allowed.' })
+        const session = readSignedSession(readCookies(request)[SESSION_COOKIE], config.sessionSigningSecret)
+        if (!session || !config.maintainers.has(session.login)) return sendJson(response, 403, { error: 'Maintainer authentication is required.' })
+        const sourceId = url.pathname.slice('/api/labels/'.length)
+        if (!/^\d+$/.test(sourceId)) return sendJson(response, 400, { error: 'A Gaia DR3 source ID is required.' })
+        try {
+          return sendJson(response, 200, { label: config.labelStore.retireLabel(sourceId, session.login) })
+        } catch (error) {
+          if (error instanceof LabelNotFoundError) return sendJson(response, 404, { error: error.message })
           throw error
         }
       }

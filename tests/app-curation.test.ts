@@ -528,4 +528,66 @@ describe('App label curation', () => {
     }, { status: 201 }))
     await flushPromises()
   })
+
+  it('removes a permanent label only after confirmation and restores the add action', async () => {
+    let labelRemoved = false
+    const fetchMock = vi.fn((input: string | URL | Request, init?: RequestInit) => {
+      const url = String(input)
+      if (url === `/api/labels/${firstSource.sourceId}` && init?.method === 'DELETE') {
+        labelRemoved = true
+        return Promise.resolve(Response.json({
+          label: {
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: 'Verified Host',
+          },
+        }))
+      }
+      if (url === '/api/labels') {
+        return Promise.resolve(Response.json({
+          labels: labelRemoved ? [] : [{
+            gaiaSourceId: firstSource.sourceId,
+            displayLabel: 'Verified Host',
+          }],
+        }))
+      }
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: true,
+        maintainer: true,
+        login: 'mshappe',
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      if (url.includes(firstSource.sourceId)) return Promise.resolve(Response.json({
+        sourceId: firstSource.sourceId,
+        candidates: [{
+          displayLabel: 'Verified Host',
+          authority: 'NASA Exoplanet Archive hostname',
+        }],
+      }))
+      throw new Error(`Unexpected request: ${url}`)
+    })
+    vi.stubGlobal('fetch', fetchMock)
+
+    const wrapper = mountApp()
+    await flushPromises()
+    wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
+    await flushPromises()
+
+    const selection = wrapper.findComponent(SelectionPanel)
+    expect(selection.props('labelAction')).toBe('remove')
+    selection.vm.$emit('requestLabelRemoval')
+    await flushPromises()
+
+    const curation = wrapper.findComponent({ name: 'LabelCurationPanel' })
+    expect(curation.props('removalOpen')).toBe(true)
+    expect(fetchMock.mock.calls.some(([input, init]) => (
+      String(input) === `/api/labels/${firstSource.sourceId}` && init?.method === 'DELETE'
+    ))).toBe(false)
+
+    curation.vm.$emit('retire')
+    await flushPromises()
+
+    expect(selection.props('labelAction')).toBe('add')
+    expect(curation.props('removalOpen')).toBe(false)
+    expect(wrapper.findComponent({ name: 'AtlasScene' }).props('permanentLabels')).toEqual({})
+  })
 })

@@ -47,4 +47,22 @@ describe('SelectionPanel', () => {
     expect(close).toHaveBeenCalledOnce()
     expect(wrapper.get('dialog').attributes('open')).toBeUndefined()
   })
+
+  it('emits the appropriate permanent-label action for the selected source', async () => {
+    const wrapper = mount(SelectionPanel, {
+      props: {
+        name: 'TRAPPIST-1',
+        summaryFields: [],
+        detailFields: [],
+        labelAction: 'add',
+      },
+    })
+
+    await wrapper.get('.label-action').trigger('click')
+    expect(wrapper.emitted('openLabelMenu')).toHaveLength(1)
+
+    await wrapper.setProps({ labelAction: 'remove' })
+    await wrapper.get('.label-action').trigger('click')
+    expect(wrapper.emitted('requestLabelRemoval')).toHaveLength(1)
+  })
 })

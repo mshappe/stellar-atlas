@@ -1,10 +1,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-defineProps<{
+const props = defineProps<{
   name?: string
   summaryFields: Array<[string, string]>
   detailFields: Array<[string, string]>
+  labelAction?: 'add' | 'remove'
+}>()
+
+const emit = defineEmits<{
+  openLabelMenu: []
+  requestLabelRemoval: []
 }>()
 
 const detailsDialog = ref<HTMLDialogElement>()
@@ -16,6 +22,11 @@ function openDetails() {
 function closeDetails() {
   detailsDialog.value?.close()
 }
+
+function handleLabelAction() {
+  if (props.labelAction === 'add') emit('openLabelMenu')
+  if (props.labelAction === 'remove') emit('requestLabelRemoval')
+}
 </script>
 
 <template>
@@ -23,9 +34,20 @@ function closeDetails() {
     <p class="selection-heading">
       Selected source
     </p>
-    <h2 class="source-name">
-      {{ name }}
-    </h2>
+    <div class="source-title-row">
+      <h2 class="source-name">
+        {{ name }}
+      </h2>
+      <button
+        v-if="labelAction"
+        class="label-action"
+        type="button"
+        :aria-label="labelAction === 'add' ? `Add a permanent label for ${name}` : `Remove the permanent label for ${name}`"
+        @click="handleLabelAction"
+      >
+        {{ labelAction === 'add' ? '+' : '-' }}
+      </button>
+    </div>
     <dl>
       <div
         v-for="[term, detail] in summaryFields"

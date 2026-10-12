@@ -44,6 +44,16 @@ export async function createPersistentLabel(sourceId: string, displayLabel: stri
   return value.label
 }
 
+export async function retirePersistentLabel(sourceId: string): Promise<PersistentLabel> {
+  const value = await requestJson(`/api/labels/${encodeURIComponent(sourceId)}`, {
+    method: 'DELETE',
+  })
+  if (!isRecord(value) || !isPersistentLabelDefinition(value.label)) {
+    throw new Error('The label retirement API response is invalid.')
+  }
+  return value.label
+}
+
 async function requestJson(path: string, init?: RequestInit): Promise<unknown> {
   const response = await fetch(path, init)
   if (!response.ok) {

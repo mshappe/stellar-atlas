@@ -1,33 +1,90 @@
 <script setup lang="ts">
+import { nextTick, ref, watch } from 'vue'
 import type { AtlasSession, LabelCandidates } from '../label-api'
 
 const props = defineProps<{
+  open: boolean
+  removalOpen: boolean
   session: AtlasSession | undefined
   sourceId: string | undefined
+  sourceName: string | undefined
   existingLabel: string | undefined
   candidates: LabelCandidates | undefined
   sessionStatus: string
   candidateError: string
   creationError: string
+  retirementError: string
   loadingCandidates: boolean
   creatingLabel: boolean
+  retiringLabel: boolean
 }>()
 
 const emit = defineEmits<{
   signIn: []
   create: [sourceId: string, displayLabel: string]
   retryCandidates: []
+  retire: []
+  closeMenu: []
+  closeRemoval: []
 }>()
+
+const curationDialog = ref<HTMLDialogElement>()
+const removalDialog = ref<HTMLDialogElement>()
+
+watch(() => props.open, async (open) => {
+  await nextTick()
+  synchronizeDialog(curationDialog.value, open)
+})
+
+watch(() => props.removalOpen, async (open) => {
+  await nextTick()
+  synchronizeDialog(removalDialog.value, open)
+})
+
+function synchronizeDialog(dialog: HTMLDialogElement | undefined, open: boolean) {
+  if (!dialog || dialog.open === open) return
+  if (open) {
+    if (typeof dialog.showModal === 'function') dialog.showModal()
+    else dialog.setAttribute('open', '')
+    return
+  }
+  if (typeof dialog.close === 'function') dialog.close()
+  else dialog.removeAttribute('open')
+}
 
 function createLabel(event: Event) {
   const displayLabel = new FormData(event.currentTarget as HTMLFormElement).get('displayLabel')
   if (props.sourceId && typeof displayLabel === 'string') emit('create', props.sourceId, displayLabel)
 }
+
+function closeCurationDialog() {
+  if (typeof curationDialog.value?.close === 'function') curationDialog.value.close()
+  else emit('closeMenu')
+}
+
+function closeRemovalDialog() {
+  if (typeof removalDialog.value?.close === 'function') removalDialog.value.close()
+  else emit('closeRemoval')
+}
 </script>
 
 <template>
-  <section>
-    <h2>Permanent labels</h2>
+  <dialog
+    ref="curationDialog"
+    class="label-curation-dialog"
+    aria-label="Permanent label options"
+    @close="emit('closeMenu')"
+  >
+    <div class="selection-details-header">
+      <h2>Permanent labels</h2>
+      <button
+        class="selection-details-close"
+        type="button"
+        @click="closeCurationDialog"
+      >
+        Close
+      </button>
+    </div>
     <p
       v-if="session === undefined"
       class="status"
@@ -135,5 +192,41 @@ function createLabel(event: Event) {
         Loading server-verified label candidates…
       </p>
     </template>
-  </section>
+  </dialog>
+  <dialog
+    ref="removalDialog"
+    class="label-curation-dialog"
+    :aria-label="`Remove permanent label for ${sourceName}`"
+    @close="emit('closeRemoval')"
+  >
+    <div class="selection-details-header">
+      <h2>Remove permanent label?</h2>
+      <button
+        class="selection-details-close"
+        type="button"
+        :disabled="retiringLabel"
+        @click="closeRemovalDialog"
+      >
+        Cancel
+      </button>
+    </div>
+    <p>
+      Remove {{ existingLabel }} as the permanent label for {{ sourceName }}?
+    </p>
+    <p
+      v-if="retirementError"
+      class="status"
+      role="status"
+    >
+      {{ retirementError }}
+    </p>
+    <button
+      class="label-removal-confirm"
+      type="button"
+      :disabled="retiringLabel"
+      @click="emit('retire')"
+    >
+      {{ retiringLabel ? 'Removing permanent label…' : 'Remove permanent label' }}
+    </button>
+  </dialog>
 </template>

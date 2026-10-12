@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS labels (
 
 CREATE TABLE IF NOT EXISTS label_events (
   id INTEGER PRIMARY KEY,
-  gaia_source_id TEXT NOT NULL REFERENCES labels(gaia_source_id),
-  event_type TEXT NOT NULL CHECK (event_type IN ('seeded', 'created')),
+  gaia_source_id TEXT NOT NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('seeded', 'created', 'removed')),
   actor_login TEXT,
   occurred_at TEXT NOT NULL,
   payload_json TEXT NOT NULL
