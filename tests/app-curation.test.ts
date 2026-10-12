@@ -207,6 +207,32 @@ describe('App label curation', () => {
     ])
   })
 
+  it('puts route distance units in values with abbreviated labels', async () => {
+    vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
+      const url = String(input)
+      if (url === '/api/labels') return Promise.resolve(Response.json({ labels: [] }))
+      if (url === '/api/session') return Promise.resolve(Response.json({
+        authenticated: false,
+        maintainer: false,
+      }))
+      if (url.includes('gaia-dr3-confirmed-exoplanet-hosts')) return Promise.resolve(new Response(catalogCsv))
+      throw new Error(`Unexpected request: ${url}`)
+    }))
+
+    const wrapper = mountApp()
+    await flushPromises()
+    const scene = wrapper.findComponent({ name: 'AtlasScene' })
+    scene.vm.$emit('select', firstSource)
+    scene.vm.$emit('select', secondSource)
+    await flushPromises()
+
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).props('fields')).toEqual([
+      ['Stops', '2'],
+      ['Overall distance', expect.stringMatching(/ ly$/)],
+      ['Light-travel distance', expect.stringMatching(/ lMs$/)],
+    ])
+  })
+
   it('retains the active catalog selection when a replacement catalog cannot load', async () => {
     vi.stubGlobal('fetch', vi.fn((input: string | URL | Request) => {
       const url = String(input)

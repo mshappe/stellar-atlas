@@ -110,6 +110,12 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   padding-top: 1.5rem;
   border-top: 1px solid #233652;
 }
+.route-panel > dl > div,
+#route-hop-details > div { padding: 0; }
+.route-panel > dl dt,
+.route-panel > dl dd,
+#route-hop-details dt,
+#route-hop-details dd { line-height: 1.25; }
 .selected-source-panel dl div { padding: 0; }
 .selected-source-panel dt,
 .selected-source-panel dd { line-height: 1.25; }
