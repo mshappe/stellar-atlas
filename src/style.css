@@ -254,13 +254,10 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
   background: #0e2038;
   color: #dbe9ff;
   cursor: pointer;
+  font-size: 1.1rem;
+  line-height: 1;
 }
 .settings-toggle:hover { background: #162943; }
-.settings-toggle svg {
-  width: 100%;
-  height: 100%;
-  fill: currentcolor;
-}
 .caveat { margin-bottom: 0; color: #94a8c4 !important; }
 code { color: #cee0ff; }
 
