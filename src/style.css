@@ -396,8 +396,9 @@ dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
 }
 .scene-hint {
   position: absolute;
+  top: 1rem;
   right: 1rem;
-  bottom: .75rem;
+  left: 1rem;
   margin: 0;
   color: #aab8cc;
   font-size: .8rem;
@@ -445,7 +446,6 @@ a { color: #9ec3ff; }
   .scene-hint {
     top: .75rem;
     right: .75rem;
-    bottom: auto;
     left: .75rem;
     font-size: .72rem;
   }
