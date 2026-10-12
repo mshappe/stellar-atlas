@@ -490,10 +490,10 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           Gaia DR3 spatial viewer
         </p>
         <h1>Stellar Atlas</h1>
-        <p class="interaction-hint">
-          Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
-        </p>
       </div>
+      <p class="interaction-hint">
+        Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop
+      </p>
       <p class="catalog-state">
         {{ catalogState }}
       </p>

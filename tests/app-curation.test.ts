@@ -82,6 +82,7 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.find('header .interaction-hint').text()).toBe('Drag to orbit · scroll to zoom · click a star to add a route stop · double-click to focus · right-click to remove the latest stop')
+    expect(wrapper.find('header > .interaction-hint').exists()).toBe(true)
     expect(wrapper.find('.scene-shell .interaction-hint').exists()).toBe(false)
   })
 

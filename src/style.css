@@ -27,6 +27,10 @@ header, footer {
   justify-content: space-between;
   gap: 1rem;
 }
+header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+}
 
 .eyebrow {
   margin: 0 0 .25rem;
@@ -40,12 +44,12 @@ header, footer {
 h1, h2, p { margin-top: 0; }
 h1 { margin-bottom: 0; font-size: clamp(1.8rem, 4vw, 2.8rem); line-height: 1; }
 h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transform: uppercase; }
-.catalog-state { margin: 0; color: #aab8cc; }
+.catalog-state { justify-self: end; margin: 0; color: #aab8cc; text-align: right; }
 .interaction-hint {
-  max-width: 52rem;
-  margin: .6rem 0 0;
+  margin: 0;
   color: #aab8cc;
   font-size: .8rem;
+  text-align: center;
 }
 
 .workspace {
@@ -434,7 +438,13 @@ a { color: #9ec3ff; }
     border-right: 0;
   }
   .scene-shell { min-height: 0; }
-  header { align-items: start; flex-direction: column; }
+  header {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: .4rem;
+  }
+  .catalog-state { justify-self: start; text-align: left; }
+  .interaction-hint { text-align: left; }
   footer { align-items: start; flex-direction: column; gap: .4rem; }
   .motion-trail-status { right: .75rem; bottom: 4.5rem; max-width: calc(100% - 1.5rem); }
   .field-of-view-status { left: .75rem; bottom: .75rem; }
