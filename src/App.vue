@@ -51,7 +51,7 @@ const projectionEpoch = ref<number | undefined>()
 const projectionRendering = ref(false)
 const MINIMUM_PROJECTION_PROGRESS_MS = 300
 const SELECTED_SOURCE_SUMMARY_TERMS = [
-  'Distance from map origin',
+  'Distance from origin',
   'Confirmed planets',
   'Planet name(s)',
   'System diameter',
@@ -397,15 +397,17 @@ function searchableIdentifiers(object: AtlasObject) {
 }
 
 function selectionFields(object: AtlasObject): Array<[string, string]> {
-  const distanceFromMapOrigin = formatLightYears(cartesianDistance(
+  const distanceFromMapOriginParsecs = cartesianDistance(
     positionForObject(object),
     positionForObject(atlas.state.selectedOrigin),
-  ))
+  )
+  const distanceFromMapOriginLightYears = distanceFromMapOriginParsecs * LIGHT_YEARS_PER_PARSEC
+  const distanceFromMapOrigin = `${formatMeasurement(distanceFromMapOriginLightYears)} ly / ${formatMeasurement(distanceFromMapOriginLightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`
   if (isNonGaiaStar(object)) {
     const elapsedYears = projectionEpoch.value === undefined ? 0 : projectionEpoch.value - GAIA_REFERENCE_EPOCH
     const [x, y, z] = object.position.map((value, index) => value + object.velocity[index] * elapsedYears)
     const fields: Array<[string, string]> = [
-      ['Distance from map origin', `${distanceFromMapOrigin} ly`],
+      ['Distance from origin', distanceFromMapOrigin],
       ['Category', object.sourceCategory],
       ['Confirmed planets', String(object.planetCount)],
       ['Planet name(s)', object.planetNames],
@@ -431,7 +433,7 @@ function selectionFields(object: AtlasObject): Array<[string, string]> {
     ['RA', `${formatMeasurement(object.ra)} deg`],
     ['Dec', `${formatMeasurement(object.dec)} deg`],
     ['Parallax', `${formatMeasurement(object.parallax)} mas`],
-    ['Distance from map origin', `${distanceFromMapOrigin} ly`],
+    ['Distance from origin', distanceFromMapOrigin],
   ]
   if (preferredName && object.hostNames && object.hostNames !== preferredName) fields.unshift(['NASA host identifier(s)', object.hostNames])
   if (object.parallaxError !== undefined && Number.isFinite(object.parallaxError)) fields.push(['Parallax uncertainty', `${formatMeasurement(object.parallaxError)} mas`])
@@ -608,6 +610,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
         />
         <SelectionPanel
           :name="selectedName"
+          :origin-name="sourceDisplayName(atlas.state.selectedOrigin)"
           :summary-fields="selectedFieldGroups.summaryFields"
           :detail-fields="selectedFieldGroups.detailFields"
           :label-action="selectedGaiaSourceId ? selectedPermanentLabel ? 'remove' : 'add' : undefined"

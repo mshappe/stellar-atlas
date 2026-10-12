@@ -165,10 +165,10 @@ describe('App label curation', () => {
     wrapper.findComponent({ name: 'AtlasScene' }).vm.$emit('focus', firstSource)
     await flushPromises()
 
-    expect(wrapper.text()).toContain('Distance from map origin')
-    expect(wrapper.text()).not.toContain('Distance from map origin (pc)')
+    expect(wrapper.text()).toContain('Distance from origin')
+    expect(wrapper.text()).not.toContain('Distance from origin (pc)')
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Distance from map origin', '0.569 ly'],
+      ['Distance from origin', '0.569 ly / 17.964 lMs'],
       ['System diameter', '1,278.45 ls'],
     ])
 
@@ -176,7 +176,7 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Distance from map origin', '1.138 ly'],
+      ['Distance from origin', '1.138 ly / 35.927 lMs'],
       ['System diameter', 'Unavailable'],
     ])
   })
@@ -199,7 +199,7 @@ describe('App label curation', () => {
     await flushPromises()
 
     expect(wrapper.findComponent(SelectionPanel).props('summaryFields')).toEqual([
-      ['Distance from map origin', '32.616 ly'],
+      ['Distance from origin', '32.616 ly / 1,029.271 lMs'],
       ['Confirmed planets', '8'],
       ['Planet name(s)', 'Mercury; Venus; Earth; Mars; Jupiter; Saturn; Uranus; Neptune'],
       ['System diameter', '30,268.159 ls'],

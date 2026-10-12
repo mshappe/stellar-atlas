@@ -428,7 +428,8 @@ dl div { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; p
 dt { color: #89aeea !important; }
 dd { margin: 0; overflow-wrap: anywhere; text-align: right; }
 .system-diameter-label,
-.route-tooltip-label {
+.route-tooltip-label,
+.origin-distance-label {
   cursor: help;
   text-decoration: underline dotted;
   text-underline-offset: .15em;

@@ -3,6 +3,7 @@ import { ref } from 'vue'
 
 const props = defineProps<{
   name?: string
+  originName?: string
   summaryFields: Array<[string, string]>
   detailFields: Array<[string, string]>
   labelAction?: 'add' | 'remove'
@@ -62,6 +63,11 @@ function handleLabelAction() {
             v-if="term === 'System diameter'"
             class="system-diameter-label"
             :title="systemDiameterTooltip"
+          >{{ term }}</abbr>
+          <abbr
+            v-else-if="term === 'Distance from origin' && originName"
+            class="origin-distance-label"
+            :title="`Map origin: ${originName}`"
           >{{ term }}</abbr>
           <span v-else>{{ term }}</span>
         </dt>

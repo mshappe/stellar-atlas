@@ -28,8 +28,9 @@ describe('SelectionPanel', () => {
     const wrapper = mount(SelectionPanel, {
       props: {
         name: 'TRAPPIST-1',
+        originName: 'Sol',
         summaryFields: [
-          ['Distance from map origin', '40.7 ly'],
+          ['Distance from origin', '40.7 ly / 1,284.394 lMs'],
           ['System diameter', '1,278.45 ls'],
         ],
         detailFields: [['Gaia source ID', '2635476908753563008']],
@@ -37,8 +38,9 @@ describe('SelectionPanel', () => {
     })
 
     expect(wrapper.get('.selected-source-panel').exists()).toBe(true)
-    expect(wrapper.find('section > dl').text()).toContain('Distance from map origin')
-    expect(wrapper.find('section > dl').text()).toContain('40.7 ly')
+    expect(wrapper.find('section > dl').text()).toContain('Distance from origin')
+    expect(wrapper.find('section > dl').text()).toContain('40.7 ly / 1,284.394 lMs')
+    expect(wrapper.get('.origin-distance-label').attributes('title')).toBe('Map origin: Sol')
     expect(wrapper.get('.system-diameter-label').attributes('title')).toContain('largest known planetary apoastron')
     expect(wrapper.find('section > dl').text()).toContain('1,278.45 ls')
     expect(wrapper.find('section > dl').text()).not.toContain('Gaia source ID')
