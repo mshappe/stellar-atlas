@@ -38,6 +38,18 @@ npm run start
 
 Configure the GitHub OAuth application's callback URL as `${PUBLIC_ORIGIN}/api/auth/github/callback`. Production `PUBLIC_ORIGIN` must use HTTPS because session and OAuth-state cookies are `Secure`.
 
+### Docker Compose
+
+After creating `.env` with `npm run setup:local`, run the complete production-shaped application with:
+
+```sh
+docker compose up --build
+```
+
+It serves the UI and API together at `http://localhost:3000`. Configure the GitHub OAuth application's homepage as `http://localhost:3000` and callback URL as `http://localhost:3000/api/auth/github/callback`. The Compose file overrides the development `PUBLIC_ORIGIN` from `.env` with `DOCKER_PUBLIC_ORIGIN`, which defaults to `http://localhost:3000`; set `DOCKER_PUBLIC_ORIGIN` to the externally visible HTTPS origin before deploying.
+
+The `atlas-labels` named volume stores only the writable label database. The image builds the read-only source-verification index at `/app/data/label-source-index.sqlite`; do not mount a volume over `/app/data`, or it will hide that index. Stop the service with `docker compose down`; preserve labels by leaving the named volume intact.
+
 To reconstruct ignored local artifacts later, rerun `npm run setup:local` if `.env` is absent, or regenerate only the source index with:
 
 ```sh
