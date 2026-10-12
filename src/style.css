@@ -259,11 +259,7 @@ h2 { margin-bottom: .6rem; font-size: .9rem; letter-spacing: .04em; text-transfo
 .settings-toggle svg {
   width: 100%;
   height: 100%;
-  fill: none;
-  stroke: currentcolor;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 2;
+  fill: currentcolor;
 }
 .caveat { margin-bottom: 0; color: #94a8c4 !important; }
 code { color: #cee0ff; }
