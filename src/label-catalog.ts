@@ -68,7 +68,7 @@ export function parsePersistentLabelCatalog(value: unknown): LabelCatalog {
   return {
     ...catalog,
     revisionsBySourceId: Object.freeze(Object.fromEntries(
-      labels.map(({ gaia_dr3_source_id, revision }) => [gaia_dr3_source_id, revision]),
+      labels.map(({ gaia_dr3_source_id, revision }) => [gaia_dr3_source_id.trim(), revision]),
     )),
   }
 }
@@ -88,7 +88,7 @@ export function addPersistentLabel(catalog: LabelCatalog, label: PersistentLabel
     ...nextCatalog,
     revisionsBySourceId: Object.freeze({
       ...catalog.revisionsBySourceId,
-      [label.gaiaSourceId]: label.revision,
+      [label.gaiaSourceId.trim()]: label.revision,
     }),
   }
 }
