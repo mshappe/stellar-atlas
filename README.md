@@ -134,7 +134,7 @@ This is the diameter of the largest **known planetary orbit** by apoastron, not 
 
 ## Point-to-point distances
 
-Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance in light-years, light-megaseconds, and parsecs; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same Cartesian positions rendered by the map: J2016.0 Gaia reciprocal-parallax coordinates and Sol's JPL Horizons state in the default view, or the selected common projected epoch in projected mode. This is not an uncertainty-aware separation estimate.
+Select distinct stars or Sol to construct an ordered route. The compact panel displays the overall travel distance as `… ly / … lMs`; expand **Show individual hops** to inspect each consecutive leg. Right-click anywhere in the map to remove the most recently selected endpoint. A light-megasecond (`lMs`) is the distance light travels in one million seconds; the conversion uses 31.5576 light-megaseconds per Julian light-year. Routes use the same Cartesian positions rendered by the map: J2016.0 Gaia reciprocal-parallax coordinates and Sol's JPL Horizons state in the default view, or the selected common projected epoch in projected mode. This is not an uncertainty-aware separation estimate.
 
 ## Complete Gaia comparison layer
 
