@@ -228,8 +228,7 @@ describe('App label curation', () => {
 
     expect(wrapper.findComponent({ name: 'RoutePanel' }).props('fields')).toEqual([
       ['Stops', '2'],
-      ['Overall distance', expect.stringMatching(/ ly$/)],
-      ['Light-travel distance', expect.stringMatching(/ lMs$/)],
+      ['Overall distance', expect.stringMatching(/ ly \/ .* lMs$/)],
     ])
   })
 

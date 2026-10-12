@@ -496,8 +496,7 @@ function routeDisplay(endpoints: AtlasObject[]) {
     status: 'Overall travel distance from the displayed Gaia coordinates.',
     fields: [
       ['Stops', String(endpoints.length)],
-      ['Overall distance', `${formatMeasurement(lightYears)} ly`],
-      ['Light-travel distance', `${formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`],
+      ['Overall distance', `${formatMeasurement(lightYears)} ly / ${formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`],
     ] as Array<[string, string]>,
     hops: endpoints.slice(1).map((endpoint, index) => {
       const hopParsecs = cartesianDistance(positions[index], positions[index + 1])
