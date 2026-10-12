@@ -493,7 +493,8 @@ function routeDisplay(endpoints: AtlasObject[]) {
   const parsecs = routeDistanceFromPositions(positions)
   const lightYears = parsecs * LIGHT_YEARS_PER_PARSEC
   return {
-    status: 'Overall travel distance from the displayed Gaia coordinates.',
+    status: '',
+    tooltip: 'Overall travel distance from the displayed Gaia coordinates.',
     fields: [
       ['Stops', String(endpoints.length)],
       ['Overall distance', `${formatMeasurement(lightYears)} ly / ${formatMeasurement(lightYears * LIGHT_MEGASECONDS_PER_LIGHT_YEAR)} lMs`],

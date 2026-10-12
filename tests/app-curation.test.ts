@@ -230,6 +230,8 @@ describe('App label curation', () => {
       ['Stops', '2'],
       ['Overall distance', expect.stringMatching(/ ly \/ .* lMs$/)],
     ])
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).props('tooltip'))
+      .toBe('Overall travel distance from the displayed Gaia coordinates.')
   })
 
   it('retains the active catalog selection when a replacement catalog cannot load', async () => {

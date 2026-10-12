@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   status: string
+  tooltip?: string
   fields: Array<[string, string]>
   hops: Array<[string, string]>
   hasEndpoints: boolean
@@ -11,8 +12,18 @@ const emit = defineEmits<{ clear: [] }>()
 
 <template>
   <section class="route-panel">
-    <h2>Point-to-point distance</h2>
-    <p class="status">
+    <h2>
+      <abbr
+        v-if="tooltip"
+        class="route-tooltip-label"
+        :title="tooltip"
+      >Point-to-point distance</abbr>
+      <span v-else>Point-to-point distance</span>
+    </h2>
+    <p
+      v-if="status"
+      class="status"
+    >
       {{ status }}
     </p>
     <dl>
