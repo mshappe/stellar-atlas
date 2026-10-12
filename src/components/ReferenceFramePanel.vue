@@ -1,5 +1,5 @@
 <template>
-  <section>
+  <section class="reference-frame-panel">
     <h2>Reference frame</h2>
     <dl>
       <div><dt>Catalog</dt><dd>Gaia DR3</dd></div>
