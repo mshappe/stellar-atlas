@@ -56,7 +56,7 @@ For live-reload development, run Vite and the API as separate containerized serv
 docker compose --profile dev up vite
 ```
 
-Open `http://localhost:${DEV_HOST_PORT:-5173}`. Vite watches the mounted client source files and proxies `/api` to the `api` service; the API service also restarts automatically when its server or shared source files change. The development services mount only live-reload inputs, keeping the image-built source-verification index at `/app/data/label-source-index.sqlite` available even in a fresh checkout. Configure the GitHub OAuth app with that same origin as its homepage and `${origin}/api/auth/github/callback` as its callback URL. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
+Open `http://localhost:5173` by default. Vite watches the mounted client source files and proxies `/api` to the `api` service; the API service also restarts automatically when its server or shared source files change. The development services mount only live-reload inputs, keeping the image-built source-verification index at `/app/data/label-source-index.sqlite` available even in a fresh checkout. Configure the GitHub OAuth app homepage as `http://localhost:5173` and its callback URL as `http://localhost:5173/api/auth/github/callback`. If you set `DEV_HOST_PORT` to another value, substitute that port in both URLs. Stop the development stack with `docker compose --profile dev down`; both production and development profiles share the persistent `atlas-labels` volume.
 
 Run tests and linting in the Docker build environment:
 

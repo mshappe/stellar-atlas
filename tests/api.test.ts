@@ -36,7 +36,7 @@ function startApiServer(overrides: Partial<ApiConfig> = {}) {
       listEvents: () => [],
       createMaintainerLabel: (label) => {
         created.push(label)
-        return { ...label, origin: 'maintainer' as const, createdAt: '2026-10-08T00:00:00.000Z' }
+        return { ...label, revision: 1, origin: 'maintainer' as const, createdAt: '2026-10-08T00:00:00.000Z' }
       },
       retireLabel: (requestedSourceId, revision, actorLogin) => {
         retired.push({ sourceId: requestedSourceId, revision, actorLogin })
@@ -222,7 +222,7 @@ describe('API', () => {
 
     expect(response.status).toBe(201)
     await expect(response.json()).resolves.toMatchObject({
-      label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', createdBy: 'mshappe' },
+      label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', revision: 1, createdBy: 'mshappe' },
     })
     expect(created).toEqual([{
       gaiaSourceId: sourceId,

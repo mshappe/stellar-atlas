@@ -23,6 +23,7 @@ const emit = defineEmits<{
 }>()
 
 const settingsDialog = ref<HTMLDialogElement>()
+const labelCatalogStatusId = 'label-catalog-status'
 
 function importCatalog(event: Event) {
   const input = event.target as HTMLInputElement
@@ -57,15 +58,26 @@ function closeSettings() {
 </script>
 
 <template>
-  <button
-    class="settings-toggle"
-    type="button"
-    aria-label="Open settings"
-    title="Settings"
-    @click="openSettings"
-  >
-    <span aria-hidden="true">⚙</span>
-  </button>
+  <div class="catalog-settings-control">
+    <button
+      class="settings-toggle"
+      type="button"
+      aria-label="Open settings"
+      :aria-describedby="labelCatalogStatus ? labelCatalogStatusId : undefined"
+      title="Settings"
+      @click="openSettings"
+    >
+      <span aria-hidden="true">⚙</span>
+    </button>
+    <p
+      v-if="labelCatalogStatus"
+      :id="labelCatalogStatusId"
+      class="label-catalog-status"
+      role="status"
+    >
+      {{ labelCatalogStatus }}
+    </p>
+  </div>
   <dialog
     ref="settingsDialog"
     class="catalog-settings-dialog"

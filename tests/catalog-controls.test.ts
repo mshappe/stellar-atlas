@@ -27,6 +27,25 @@ describe('CatalogControls', () => {
     expect(wrapper.get('.catalog-settings-dialog').text()).toContain('Catalog input')
   })
 
+  it('surfaces label-loading failures beside the closed settings control', () => {
+    const wrapper = mount(CatalogControls, {
+      props: {
+        selectedCatalogKey: 'confirmed-hosts',
+        hideUnlabeledStars: false,
+        importStatus: 'Ready.',
+        labelCatalogStatus: 'Permanent labels are unavailable: HTTP 503. Retry to restore them.',
+        projectionEpoch: undefined,
+        projectionAvailable: true,
+        projectedSourceCount: undefined,
+        projectionRendering: false,
+      },
+    })
+
+    expect(wrapper.get('.catalog-settings-dialog').attributes('open')).toBeUndefined()
+    expect(wrapper.get('.catalog-settings-control [role="status"]').text()).toContain('Permanent labels are unavailable')
+    expect(wrapper.get('.settings-toggle').attributes('aria-describedby')).toBe('label-catalog-status')
+  })
+
   it('represents an imported catalog instead of selecting an unrelated bundled catalog', () => {
     const wrapper = mount(CatalogControls, {
       props: {

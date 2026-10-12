@@ -350,6 +350,19 @@ code { color: #cee0ff; }
   display: grid;
   gap: .75rem;
 }
+.catalog-settings-control {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.label-catalog-status {
+  max-width: 18rem;
+  margin: 0;
+  color: #ffd8a8;
+  font-size: .72rem;
+  line-height: 1.25;
+  text-align: left;
+}
 .curation-form label {
   display: grid;
   gap: .4rem;
@@ -629,6 +642,8 @@ a { color: #9ec3ff; }
   }
   .catalog-state { justify-self: end; text-align: right; }
   .header-actions { justify-content: end; }
+  .catalog-settings-control { align-items: start; }
+  .label-catalog-status { max-width: 12rem; }
   .selected-source-panel dl div {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
     gap: .75rem;
