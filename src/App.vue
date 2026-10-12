@@ -263,6 +263,7 @@ async function retireLabel() {
     await refreshLabelCatalog()
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     labelRemovalOpen.value = false
+    await refreshLabelCandidates()
   } catch (error) {
     if (!isCurrentCurationRequest(requestId, sourceId)) return
     retirementError.value = `Permanent label could not be removed: ${error instanceof Error ? error.message : 'unknown error'}.`

@@ -589,5 +589,9 @@ describe('App label curation', () => {
     expect(selection.props('labelAction')).toBe('add')
     expect(curation.props('removalOpen')).toBe(false)
     expect(wrapper.findComponent({ name: 'AtlasScene' }).props('permanentLabels')).toEqual({})
+    expect(curation.props('candidates')).toMatchObject({
+      sourceId: firstSource.sourceId,
+      candidates: [{ displayLabel: 'Verified Host' }],
+    })
   })
 })
