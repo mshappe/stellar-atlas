@@ -7,6 +7,7 @@ export type LabelSeed = {
 }
 
 export type PersistentLabel = LabelSeed & {
+  revision: number
   origin: LabelOrigin
   createdAt: string
   createdBy: string | undefined

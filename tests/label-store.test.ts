@@ -3,7 +3,7 @@ import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { LabelAlreadyExistsError, openLabelStore, parseLabelSeeds } from '../server/label-store'
+import { LabelAlreadyExistsError, LabelRevisionConflictError, openLabelStore, parseLabelSeeds } from '../server/label-store'
 
 const temporaryDirectories: string[] = []
 
@@ -89,6 +89,7 @@ describe('label store', () => {
     expect(store.listLabels()).toEqual([{
       gaiaSourceId: '2635476908753563008',
       displayLabel: 'TRAPPIST-1',
+      revision: 1,
       evidence: provenance.labels[0],
       origin: 'seed',
       createdAt: '2026-10-08T00:00:00.000Z',
@@ -204,7 +205,7 @@ describe('label store', () => {
     const databasePath = temporaryDatabasePath()
     const first = openLabelStore(databasePath, parseLabelSeeds(provenance), () => '2026-10-08T00:00:00.000Z')
 
-    expect(first.retireLabel(provenance.labels[0].gaia_dr3_source_id, 'mshappe')).toMatchObject({
+    expect(first.retireLabel(provenance.labels[0].gaia_dr3_source_id, 1, 'mshappe')).toMatchObject({
       displayLabel: 'TRAPPIST-1',
       origin: 'seed',
     })
@@ -233,7 +234,7 @@ describe('label store', () => {
       eventType: 'seeded',
       occurredAt: '2026-10-07T00:00:00.000Z',
     }])
-    expect(store.retireLabel(provenance.labels[0].gaia_dr3_source_id, 'mshappe')).toMatchObject({
+    expect(store.retireLabel(provenance.labels[0].gaia_dr3_source_id, 1, 'mshappe')).toMatchObject({
       origin: 'seed',
       createdAt: '2026-10-07T00:00:00.000Z',
     })
@@ -253,7 +254,7 @@ describe('label store', () => {
       createdBy: 'mshappe',
     }
     store.createMaintainerLabel(original)
-    store.retireLabel(original.gaiaSourceId, 'mshappe')
+    store.retireLabel(original.gaiaSourceId, 1, 'mshappe')
 
     expect(store.createMaintainerLabel({
       ...original,
@@ -261,6 +262,32 @@ describe('label store', () => {
       evidence: { gaia_dr3_source_id: original.gaiaSourceId, nasa_hostname: 'Verified Host' },
     })).toMatchObject({ displayLabel: 'Verified Host' })
     expect(store.listEvents().map((event) => event.eventType)).toEqual(['created', 'removed', 'created'])
+    store.close()
+  })
+
+  it('does not retire a replacement label from a stale confirmation', () => {
+    const store = openLabelStore(temporaryDatabasePath(), [], () => '2026-10-08T00:00:00.000Z')
+    const original = store.createMaintainerLabel({
+      gaiaSourceId: '1234567890123456789',
+      displayLabel: 'Original label',
+      evidence: { gaia_dr3_source_id: '1234567890123456789' },
+      createdBy: 'mshappe',
+    })
+    store.retireLabel(original.gaiaSourceId, original.revision, 'mshappe')
+    const replacement = store.createMaintainerLabel({
+      gaiaSourceId: original.gaiaSourceId,
+      displayLabel: 'Replacement label',
+      evidence: { gaia_dr3_source_id: original.gaiaSourceId, nasa_hostname: 'Replacement label' },
+      createdBy: 'another-maintainer',
+    })
+
+    expect(() => store.retireLabel(original.gaiaSourceId, original.revision, 'mshappe'))
+      .toThrow(LabelRevisionConflictError)
+    expect(store.listLabels()).toMatchObject([{
+      gaiaSourceId: original.gaiaSourceId,
+      displayLabel: 'Replacement label',
+      revision: replacement.revision,
+    }])
     store.close()
   })
 })

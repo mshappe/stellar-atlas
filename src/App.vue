@@ -86,6 +86,9 @@ const selectedGaiaSourceId = computed(() => {
 const selectedPermanentLabel = computed(() => selectedGaiaSourceId.value
   ? atlas.state.permanentLabels.labelsBySourceId[selectedGaiaSourceId.value]
   : undefined)
+const selectedPermanentLabelRevision = computed(() => selectedGaiaSourceId.value
+  ? atlas.state.permanentLabels.revisionsBySourceId[selectedGaiaSourceId.value]
+  : undefined)
 const isCreatingLabel = computed(() => selectedGaiaSourceId.value !== undefined
   && creatingLabelSourceIds.value.has(selectedGaiaSourceId.value))
 const isRetiringLabel = computed(() => selectedGaiaSourceId.value !== undefined
@@ -272,12 +275,13 @@ async function createLabel(sourceId: string, displayLabel: string) {
 
 async function retireLabel() {
   const sourceId = selectedGaiaSourceId.value
-  if (!sourceId || !selectedPermanentLabel.value || retiringLabelSourceIds.value.has(sourceId)) return
+  const revision = selectedPermanentLabelRevision.value
+  if (!sourceId || !selectedPermanentLabel.value || revision === undefined || retiringLabelSourceIds.value.has(sourceId)) return
   const requestId = ++curationRequestId
   retirementError.value = ''
   retiringLabelSourceIds.value = new Set([...retiringLabelSourceIds.value, sourceId])
   try {
-    await retirePersistentLabel(sourceId)
+    await retirePersistentLabel(sourceId, revision)
     labelCatalogLoadId += 1
     atlas.setLabelCatalog(removePersistentLabel(atlas.state.permanentLabels, sourceId))
     resetSearch()

@@ -20,11 +20,17 @@ export class LabelNotFoundError extends Error {
   }
 }
 
+export class LabelRevisionConflictError extends Error {
+  constructor(sourceId: string) {
+    super(`Gaia DR3 source ID ${sourceId} has changed since confirmation. Refresh and try again.`)
+  }
+}
+
 export type LabelStore = {
   listLabels(): PersistentLabel[]
   listEvents(): LabelEvent[]
   createMaintainerLabel(label: MaintainerLabel): PersistentLabel
-  retireLabel(sourceId: string, actorLogin: string): PersistentLabel
+  retireLabel(sourceId: string, revision: number, actorLogin: string): PersistentLabel
   schemaVersion(): number
   close(): void
 }
@@ -60,7 +66,21 @@ export function openLabelStore(databasePath: string, seeds: LabelSeed[], now = (
 
   return {
     listLabels: () => database.prepare(`
-      SELECT gaia_source_id, display_label, evidence_json, origin, created_at, created_by
+      SELECT
+        gaia_source_id,
+        display_label,
+        evidence_json,
+        origin,
+        created_at,
+        created_by,
+        (
+          SELECT id
+          FROM label_events
+          WHERE gaia_source_id = labels.gaia_source_id
+            AND event_type IN ('seeded', 'created')
+          ORDER BY id DESC
+          LIMIT 1
+        ) AS revision
       FROM labels
       ORDER BY gaia_source_id
     `).all().map((row) => mapLabel(row)),
@@ -70,7 +90,7 @@ export function openLabelStore(databasePath: string, seeds: LabelSeed[], now = (
       ORDER BY id
     `).all().map((row) => mapEvent(row)),
     createMaintainerLabel: (label) => createMaintainerLabel(database, label, now),
-    retireLabel: (sourceId, actorLogin) => retireLabel(database, sourceId, actorLogin, now),
+    retireLabel: (sourceId, revision, actorLogin) => retireLabel(database, sourceId, revision, actorLogin, now),
     schemaVersion: () => {
       const row = database.prepare('SELECT MAX(version) AS version FROM schema_migrations').get()
       return isRecord(row) && typeof row.version === 'number' ? row.version : 0
@@ -180,9 +200,23 @@ function seedLabels(database: DatabaseSync, seeds: LabelSeed[], now: () => strin
   }
 }
 
-function retireLabel(database: DatabaseSync, sourceId: string, actorLogin: string, now: () => string): PersistentLabel {
+function retireLabel(database: DatabaseSync, sourceId: string, revision: number, actorLogin: string, now: () => string): PersistentLabel {
   const findLabel = database.prepare(`
-    SELECT gaia_source_id, display_label, evidence_json, origin, created_at, created_by
+    SELECT
+      gaia_source_id,
+      display_label,
+      evidence_json,
+      origin,
+      created_at,
+      created_by,
+      (
+        SELECT id
+        FROM label_events
+        WHERE gaia_source_id = labels.gaia_source_id
+          AND event_type IN ('seeded', 'created')
+        ORDER BY id DESC
+        LIMIT 1
+      ) AS revision
     FROM labels
     WHERE gaia_source_id = ?
   `)
@@ -196,6 +230,7 @@ function retireLabel(database: DatabaseSync, sourceId: string, actorLogin: strin
     const row = findLabel.get(sourceId)
     if (!row) throw new LabelNotFoundError(sourceId)
     const label = mapLabel(row)
+    if (label.revision !== revision) throw new LabelRevisionConflictError(sourceId)
     const occurredAt = now()
     deleteLabel.run(sourceId)
     insertEvent.run(sourceId, actorLogin, occurredAt, JSON.stringify({
@@ -224,14 +259,15 @@ function createMaintainerLabel(database: DatabaseSync, label: MaintainerLabel, n
     VALUES (?, 'created', ?, ?, ?)
   `)
   const createdAt = now()
+  let revision: number
   database.exec('BEGIN IMMEDIATE')
   try {
     if (findLabel.get(label.gaiaSourceId)) throw new LabelAlreadyExistsError(label.gaiaSourceId)
     insertLabel.run(label.gaiaSourceId, label.displayLabel, JSON.stringify(label.evidence), createdAt, label.createdBy)
-    insertEvent.run(label.gaiaSourceId, label.createdBy, createdAt, JSON.stringify({
+    revision = Number(insertEvent.run(label.gaiaSourceId, label.createdBy, createdAt, JSON.stringify({
       display_label: label.displayLabel,
       evidence: label.evidence,
-    }))
+    })).lastInsertRowid)
     database.exec('COMMIT')
   } catch (error) {
     database.exec('ROLLBACK')
@@ -239,6 +275,7 @@ function createMaintainerLabel(database: DatabaseSync, label: MaintainerLabel, n
   }
   return {
     ...label,
+    revision,
     origin: 'maintainer',
     createdAt,
   }
@@ -253,12 +290,14 @@ function mapLabel(row: unknown): PersistentLabel {
     || (row.origin !== 'seed' && row.origin !== 'maintainer')
     || typeof row.created_at !== 'string'
     || (row.created_by !== null && typeof row.created_by !== 'string')
+    || typeof row.revision !== 'number'
   ) {
     throw new Error('The labels table contains an invalid record.')
   }
   return {
     gaiaSourceId: row.gaia_source_id,
     displayLabel: row.display_label,
+    revision: row.revision,
     evidence: parseJsonRecord(row.evidence_json, 'label evidence'),
     origin: row.origin,
     createdAt: row.created_at,

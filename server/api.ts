@@ -3,7 +3,7 @@ import { createReadStream, promises as filesystem } from 'node:fs'
 import { extname, isAbsolute, relative, resolve } from 'node:path'
 import { URL } from 'node:url'
 import { createCallbackState, createSignedSession, readSignedSession, verifyCallbackState } from './auth'
-import { LabelAlreadyExistsError, LabelNotFoundError, type LabelStore } from './label-store'
+import { LabelAlreadyExistsError, LabelNotFoundError, LabelRevisionConflictError, type LabelStore } from './label-store'
 import type { SourceIndex } from './contracts'
 
 const SESSION_COOKIE = 'stellar_atlas_session'
@@ -104,11 +104,22 @@ export function createApiServer(config: ApiConfig) {
         if (!session || !config.maintainers.has(session.login)) return sendJson(response, 403, { error: 'Maintainer authentication is required.' })
         const sourceId = url.pathname.slice('/api/labels/'.length)
         if (!/^\d+$/.test(sourceId)) return sendJson(response, 400, { error: 'A Gaia DR3 source ID is required.' })
+        const body = await readJson(request)
+        if (!isRetirementRequest(body)) return sendJson(response, 400, { error: 'A current label revision is required.' })
         try {
-          return sendJson(response, 200, { label: config.labelStore.retireLabel(sourceId, session.login) })
+          return sendJson(response, 200, { label: config.labelStore.retireLabel(sourceId, body.revision, session.login) })
         } catch (error) {
           if (error instanceof LabelNotFoundError) return sendJson(response, 404, { error: error.message })
+          if (error instanceof LabelRevisionConflictError) return sendJson(response, 409, { error: error.message })
           throw error
+        }
+
+        function isRetirementRequest(value: unknown): value is { revision: number } {
+          return isRecord(value) && typeof value.revision === 'number' && Number.isSafeInteger(value.revision) && value.revision > 0
+        }
+
+        function isRecord(value: unknown): value is Record<string, unknown> {
+          return typeof value === 'object' && value !== null
         }
       }
       if (await serveStaticFile(request, response, url, config.staticDirectory)) return

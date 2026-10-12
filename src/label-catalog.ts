@@ -1,15 +1,18 @@
 export type LabelCatalog = {
   labelsBySourceId: Readonly<Record<string, string>>
+  revisionsBySourceId: Readonly<Record<string, number>>
   sourceIds: ReadonlySet<string>
 }
 
 export type PersistentLabel = {
   gaiaSourceId: string
   displayLabel: string
+  revision: number
 }
 
 export const EMPTY_LABEL_CATALOG: LabelCatalog = {
   labelsBySourceId: {},
+  revisionsBySourceId: {},
   sourceIds: new Set(),
 }
 
@@ -42,6 +45,7 @@ export function parseLabelCatalog(value: unknown): LabelCatalog {
 
   return {
     labelsBySourceId: Object.freeze(labelsBySourceId),
+    revisionsBySourceId: Object.freeze({}),
     sourceIds: new Set(Object.keys(labelsBySourceId)),
   }
 }
@@ -50,19 +54,27 @@ export function parsePersistentLabelCatalog(value: unknown): LabelCatalog {
   if (!isRecord(value) || !Array.isArray(value.labels)) {
     throw new Error('The persistent label API response must contain a labels array.')
   }
-  return catalogFromDefinitions(value.labels.map((definition, index) => {
+  const labels = value.labels.map((definition, index) => {
     if (!isPersistentLabelDefinition(definition)) {
-      throw new Error(`Persistent label record ${index + 1} must contain a Gaia DR3 source ID and display label.`)
+      throw new Error(`Persistent label record ${index + 1} must contain a Gaia DR3 source ID, display label, and revision.`)
     }
     return {
       gaia_dr3_source_id: definition.gaiaSourceId,
       display_label: definition.displayLabel,
+      revision: definition.revision,
     }
-  }))
+  })
+  const catalog = catalogFromDefinitions(labels)
+  return {
+    ...catalog,
+    revisionsBySourceId: Object.freeze(Object.fromEntries(
+      labels.map(({ gaia_dr3_source_id, revision }) => [gaia_dr3_source_id, revision]),
+    )),
+  }
 }
 
 export function addPersistentLabel(catalog: LabelCatalog, label: PersistentLabel): LabelCatalog {
-  return catalogFromDefinitions([
+  const nextCatalog = catalogFromDefinitions([
     ...Object.entries(catalog.labelsBySourceId).map(([gaia_dr3_source_id, display_label]) => ({
       gaia_dr3_source_id,
       display_label,
@@ -72,14 +84,28 @@ export function addPersistentLabel(catalog: LabelCatalog, label: PersistentLabel
       display_label: label.displayLabel,
     },
   ])
+  return {
+    ...nextCatalog,
+    revisionsBySourceId: Object.freeze({
+      ...catalog.revisionsBySourceId,
+      [label.gaiaSourceId]: label.revision,
+    }),
+  }
 }
 
 export function removePersistentLabel(catalog: LabelCatalog, sourceId: string): LabelCatalog {
-  return catalogFromDefinitions(
+  const nextCatalog = catalogFromDefinitions(
     Object.entries(catalog.labelsBySourceId)
       .filter(([gaiaSourceId]) => gaiaSourceId !== sourceId)
       .map(([gaia_dr3_source_id, display_label]) => ({ gaia_dr3_source_id, display_label })),
   )
+  return {
+    ...nextCatalog,
+    revisionsBySourceId: Object.freeze(Object.fromEntries(
+      Object.entries(catalog.revisionsBySourceId)
+        .filter(([gaiaSourceId]) => gaiaSourceId !== sourceId),
+    )),
+  }
 }
 
 function isLabelDefinition(value: unknown): value is LabelDefinition {
@@ -92,6 +118,9 @@ function isPersistentLabelDefinition(value: unknown): value is PersistentLabel {
   return isRecord(value)
     && typeof value.gaiaSourceId === 'string'
     && typeof value.displayLabel === 'string'
+    && typeof value.revision === 'number'
+    && Number.isSafeInteger(value.revision)
+    && value.revision > 0
 }
 
 function catalogFromDefinitions(definitions: unknown[]): LabelCatalog {

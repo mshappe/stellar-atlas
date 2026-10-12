@@ -332,6 +332,7 @@ describe('App label curation', () => {
           labels: labelCreated ? [{
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           }] : [],
         }))
       }
@@ -378,6 +379,7 @@ describe('App label curation', () => {
       label: {
         gaiaSourceId: firstSource.sourceId,
         displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+        revision: 1,
       },
     }, { status: 201 }))
     await flushPromises()
@@ -478,6 +480,7 @@ describe('App label curation', () => {
           label: {
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           },
         }, { status: 201 }))
       }
@@ -529,6 +532,7 @@ describe('App label curation', () => {
           label: {
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           },
         }, { status: 201 }))
       }
@@ -539,6 +543,7 @@ describe('App label curation', () => {
           labels: [{
             gaiaSourceId: firstSource.sourceId,
             displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+            revision: 1,
           }],
         }))
       }
@@ -611,6 +616,7 @@ describe('App label curation', () => {
       label: {
         gaiaSourceId: firstSource.sourceId,
         displayLabel: `Gaia DR3 ${firstSource.sourceId}`,
+        revision: 1,
       },
     }, { status: 201 }))
     await flushPromises()
@@ -626,6 +632,7 @@ describe('App label curation', () => {
           label: {
             gaiaSourceId: firstSource.sourceId,
             displayLabel: 'Verified Host',
+            revision: 1,
           },
         }))
       }
@@ -634,6 +641,7 @@ describe('App label curation', () => {
           labels: labelRemoved ? [] : [{
             gaiaSourceId: firstSource.sourceId,
             displayLabel: 'Verified Host',
+            revision: 1,
           }],
         }))
       }

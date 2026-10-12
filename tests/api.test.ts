@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createApiServer, type ApiConfig } from '../server/api'
 import { createSignedSession } from '../server/auth'
-import { LabelAlreadyExistsError, LabelNotFoundError } from '../server/label-store'
+import { LabelAlreadyExistsError, LabelNotFoundError, LabelRevisionConflictError } from '../server/label-store'
 
 const origin = 'http://127.0.0.1'
 const sourceId = '1234567890123456789'
@@ -38,11 +38,12 @@ function startApiServer(overrides: Partial<ApiConfig> = {}) {
         created.push(label)
         return { ...label, origin: 'maintainer' as const, createdAt: '2026-10-08T00:00:00.000Z' }
       },
-      retireLabel: (requestedSourceId, actorLogin) => {
-        retired.push({ sourceId: requestedSourceId, actorLogin })
+      retireLabel: (requestedSourceId, revision, actorLogin) => {
+        retired.push({ sourceId: requestedSourceId, revision, actorLogin })
         return {
           gaiaSourceId: requestedSourceId,
           displayLabel: 'Verified Host',
+          revision,
           evidence: { gaia_dr3_source_id: requestedSourceId, nasa_hostname: 'Verified Host' },
           origin: 'maintainer' as const,
           createdAt: '2026-10-08T00:00:00.000Z',
@@ -95,13 +96,15 @@ function postLabel(baseUrl: string, options: { body?: string, cookie?: string, o
   })
 }
 
-function deleteLabel(baseUrl: string, requestedSourceId = sourceId, options: { cookie?: string, origin?: string } = {}) {
+function deleteLabel(baseUrl: string, requestedSourceId = sourceId, options: { cookie?: string, origin?: string, revision?: number } = {}) {
   return fetch(`${baseUrl}/api/labels/${requestedSourceId}`, {
     method: 'DELETE',
     headers: {
       ...(options.cookie ? { Cookie: options.cookie } : {}),
       ...(options.origin ? { Origin: options.origin } : {}),
+      'Content-Type': 'application/json',
     },
+    body: JSON.stringify({ revision: options.revision ?? 1 }),
   })
 }
 
@@ -257,7 +260,7 @@ describe('API', () => {
     await expect(response.json()).resolves.toMatchObject({
       label: { gaiaSourceId: sourceId, displayLabel: 'Verified Host', createdBy: 'mshappe' },
     })
-    expect(retired).toEqual([{ sourceId, actorLogin: 'mshappe' }])
+    expect(retired).toEqual([{ sourceId, revision: 1, actorLogin: 'mshappe' }])
   })
 
   it('reports a missing permanent label during retirement', async () => {
@@ -275,6 +278,7 @@ describe('API', () => {
         close: () => {},
       },
     })
+
     const baseUrl = await listen(server)
 
     const response = await deleteLabel(baseUrl, sourceId, { cookie: sessionCookie, origin })
@@ -282,6 +286,35 @@ describe('API', () => {
     expect(response.status).toBe(404)
     await expect(response.json()).resolves.toEqual({
       error: `Gaia DR3 source ID ${sourceId} does not have a permanent label.`,
+    })
+  })
+
+  it('rejects retirement when the confirmed label revision is stale', async () => {
+    const { server } = startApiServer({
+      labelStore: {
+        listLabels: () => [],
+        listEvents: () => [],
+        createMaintainerLabel: () => {
+          throw new LabelAlreadyExistsError(sourceId)
+        },
+        retireLabel: () => {
+          throw new LabelRevisionConflictError(sourceId)
+        },
+        schemaVersion: () => 2,
+        close: () => {},
+      },
+    })
+    const baseUrl = await listen(server)
+
+    const response = await deleteLabel(baseUrl, sourceId, {
+      cookie: sessionCookie,
+      origin,
+      revision: 99,
+    })
+
+    expect(response.status).toBe(409)
+    await expect(response.json()).resolves.toEqual({
+      error: `Gaia DR3 source ID ${sourceId} has changed since confirmation. Refresh and try again.`,
     })
   })
 

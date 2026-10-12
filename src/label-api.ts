@@ -48,9 +48,11 @@ export async function createPersistentLabel(sourceId: string, displayLabel: stri
   return value.label
 }
 
-export async function retirePersistentLabel(sourceId: string): Promise<PersistentLabel> {
+export async function retirePersistentLabel(sourceId: string, revision: number): Promise<PersistentLabel> {
   const value = await requestJson(`/api/labels/${encodeURIComponent(sourceId)}`, {
     method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ revision }),
   })
   if (!isRecord(value) || !isPersistentLabelDefinition(value.label)) {
     throw new Error('The label retirement API response is invalid.')
@@ -91,6 +93,9 @@ function isPersistentLabelDefinition(value: unknown): value is PersistentLabel {
   return isRecord(value)
     && typeof value.gaiaSourceId === 'string'
     && typeof value.displayLabel === 'string'
+    && typeof value.revision === 'number'
+    && Number.isSafeInteger(value.revision)
+    && value.revision > 0
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
