@@ -221,8 +221,13 @@ describe('App label curation', () => {
 
     const wrapper = mountApp()
     await flushPromises()
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).exists()).toBe(false)
+
     const scene = wrapper.findComponent({ name: 'AtlasScene' })
     scene.vm.$emit('select', firstSource)
+    await flushPromises()
+    expect(wrapper.findComponent({ name: 'RoutePanel' }).exists()).toBe(false)
+
     scene.vm.$emit('select', secondSource)
     await flushPromises()
 

@@ -640,6 +640,7 @@ function isGaiaRow(object: AtlasObject): object is GaiaRow {
           @close-removal="labelRemovalOpen = false"
         />
         <RoutePanel
+          v-if="atlas.state.measurementEndpoints.length >= 2"
           v-bind="route"
           :has-endpoints="Boolean(atlas.state.measurementEndpoints.length)"
           @clear="clearRoute"
